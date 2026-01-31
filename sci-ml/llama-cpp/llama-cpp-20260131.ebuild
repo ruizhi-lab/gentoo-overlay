@@ -5,8 +5,9 @@ inherit cmake toolchain-funcs
 DESCRIPTION="Inference of LLaMA models in pure C/C++"
 HOMEPAGE="https://github.com/ggml-org/llama.cpp"
 
-COMMIT="ec6c742"
+COMMIT="89f10baad5a1809055d71110dff60e55561b9c62"
 SRC_URI="https://github.com/ggml-org/llama.cpp/archive/${COMMIT}.tar.gz -> ${P}.tar.gz"
+
 S="${WORKDIR}/llama.cpp-${COMMIT}"
 
 LICENSE="MIT"
@@ -16,14 +17,14 @@ KEYWORDS="~amd64"
 IUSE="cuda vulkan native"
 
 DEPEND="
-    dev-build/cmake
-    dev-vcs/git
     net-misc/curl
     cuda? ( dev-util/nvidia-cuda-toolkit )
     vulkan? ( media-libs/vulkan-loader )
 "
 
 src_configure() {
+    export CC=/usr/bin/gcc-14
+    export CXX=/usr/bin/g++-14
     export CUDAHOSTCXX="$(tc-getCXX)"
 
     local mycmakeargs=(
@@ -35,3 +36,4 @@ src_configure() {
 
     cmake_src_configure
 }
+

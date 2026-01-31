@@ -22,6 +22,8 @@ DEPEND="
 "
 
 src_configure() {
+    export CC=/usr/bin/gcc-14
+    export CXX=/usr/bin/g++-14
     export CUDAHOSTCXX="$(tc-getCXX)"
 
     local mycmakeargs=(
