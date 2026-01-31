@@ -9,7 +9,7 @@ EGIT_REPO_URI="https://github.com/ggml-org/llama.cpp.git"
 
 LICENSE="MIT"
 SLOT="0"
-KEYWORDS=""
+KEYWORDS="~amd64"
 
 IUSE="cuda vulkan native"
 
@@ -24,7 +24,7 @@ DEPEND="
 src_configure() {
     export CC=/usr/bin/gcc-14
     export CXX=/usr/bin/g++-14
-    export CUDAHOSTCXX="$(tc-getCXX)"
+    export CUDAHOSTCXX="$CXX"
 
     local mycmakeargs=(
         -DBUILD_SHARED_LIBS=ON
@@ -34,5 +34,13 @@ src_configure() {
     )
 
     cmake_src_configure
+}
+
+src_compile() {
+    cmake_src_compile
+}
+
+src_install() {
+    cmake_src_install
 }
 
