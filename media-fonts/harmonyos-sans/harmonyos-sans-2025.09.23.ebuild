@@ -19,6 +19,8 @@ FONT_SUFFIX="ttf"
 RESTRICT="mirror"
 
 src_install() {
+    insinto "${FONTDIR}"
+
     find . -type f -name "*.ttf" -print0 | while IFS= read -r -d '' f; do
         doins "$f"
     done
