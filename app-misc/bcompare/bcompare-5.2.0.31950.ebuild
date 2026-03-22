@@ -3,7 +3,7 @@
 
 EAPI=8
 
-inherit xdg-utils
+inherit desktop xdg-utils
 
 DESCRIPTION="Compare, merge files and folders using simple, powerful commands."
 HOMEPAGE="https://www.scootersoftware.com"
@@ -15,7 +15,7 @@ KEYWORDS="amd64"
 IUSE=""
 QA_PREBUILT="*"
 
-RESTRICT="bindist mirror"
+RESTRICT="bindist mirror strip"
 
 DEPEND=""
 RDEPEND="
@@ -31,37 +31,40 @@ RDEPEND="
 	"
 BDEPEND=""
 
-src_install()
-{
-	mkdir -p "${D}/"usr/lib/beyondcompare
-	cp "${S}/"{BCompare,BCompare.mad,libcloudstorage.so.22.0} "${D}/"usr/lib/beyondcompare/
+src_install() {
+	local BC_LIB="/usr/lib/beyondcompare"
+    local BC_BIN="/usr/bin"
 
-	ln -s /usr/lib64/p7zip/7z.so "${D}/"usr/lib/beyondcompare/lib7z.so
+    exeinto "${BC_LIB}"
+    doexe BCompare bcmount.sh
 
-	mkdir -p "${D}/"usr/bin
-	cat <<-EOF >"${D}"/usr/bin/bcompare || die
-		#!/bin/sh
-		LD_LIBRARY_PATH="/usr/lib/beyondcompare" \\
-		exec /usr/lib/beyondcompare/BCompare "\$@"
-	EOF
-	fperms +x /usr/bin/bcompare
+    insinto "${BC_LIB}"
+    doins BCompare.mad lib7z.so libcloudstorage.so.22.0 libunrar.so
+    doins bcompare.conf.sample mime.types README copyright
 
-	mkdir -p "${D}/"usr/share/applications
-	cp "${S}/"bcompare.desktop "${D}/"usr/share/applications/
+    dosym /usr/$(get_libdir)/libbz2.so.1 "${BC_LIB}/libbz2.so.1.0"
 
-	mkdir -p "${D}/"usr/share/doc/${PF}
-	cp -r "${S}/"help/* "${D}/"usr/share/doc/${PF}/
+    local KDE6_PLUGINS="/usr/$(get_libdir)/qt6/plugins/kf6/kfileitemaction"
+    if [ -d "${KDE6_PLUGINS}" ]; then
+        insinto "${KDE6_PLUGINS}"
+        newins "ext/bcompare_ext_kde6.amd64.so" "bcompare_ext_kde6.so"
+    fi
 
-	mkdir -p "${D}/"usr/share/mime/packages
-	cp "${S}/"bcompare.xml "${D}/"usr/share/mime/packages/
+    dodir "${BC_BIN}"
+    cat <<-EOF >"${ED}${BC_BIN}/bcompare" || die
+#!/bin/sh
+export QT_QPA_PLATFORM=xcb
+export LD_LIBRARY_PATH="${BC_LIB}:\${LD_LIBRARY_PATH}"
+exec "${BC_LIB}/BCompare" "\$@"
+EOF
+    fperms +x "${BC_BIN}/bcompare"
 
-	mkdir -p "${D}/"usr/share/pixmaps
-	cp "${S}/"{bcompare.png,bcomparefull32.png,bcomparehalf32.png} "${D}/"usr/share/pixmaps/
+    domenu bcompare.desktop
+    doicon bcompare.png
+    insinto /usr/share/mime/packages
+    doins bcompare.xml
 
-	# prevent revdep-rebuild from attempting to rebuild all the time
-	insinto /etc/revdep-rebuild
-	echo "SEARCH_DIRS_MASK=\"/usr/lib/beyondcompare\"" >> ${T}/20${PN}
-	doins "${T}/20${PN}"
+    dodoc -r help/*
 }
 
 pkg_postinst() {
