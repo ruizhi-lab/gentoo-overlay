@@ -1,0 +1,14 @@
+BDEPEND=app-arch/unzip X? ( >=x11-apps/mkfontscale-1.2.0 media-fonts/encodings )
+DEFINED_PHASES=install postinst postrm setup
+DESCRIPTION=HarmonyOS Sans fonts (华为鸿蒙字体)
+EAPI=8
+HOMEPAGE=https://developer.huawei.com/consumer/cn/design/resource/
+INHERIT=font
+IUSE=X
+KEYWORDS=~amd64 ~x86
+LICENSE=LicenseRef-custom
+RESTRICT=mirror
+SLOT=0
+SRC_URI=https://alliance-communityfile-drcn.dbankcdn.com/...zip -> harmonyos-sans-2025.09.23.zip
+_eclasses_=font	6d0c60c855c05ae2ba808d300440ded2
+_md5_=608503ba4595c9b2147d7916d5ebbaa0

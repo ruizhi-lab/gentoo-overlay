@@ -1,0 +1,15 @@
+BDEPEND=virtual/pkgconfig app-alternatives/ninja >=dev-build/cmake-3.28.5
+DEFINED_PHASES=compile configure install prepare test
+DEPEND=app-arch/bzip2 app-i18n/opencc app-text/hunspell dev-libs/lzo dev-libs/xapian app-arch/xz-utils dev-libs/kdsingleapplication dev-libs/eb dev-libs/libfmt dev-cpp/tomlplusplus dev-qt/qtbase:6[X,gui,network,sql,widgets,xml] dev-qt/qtmultimedia:6 dev-qt/qtspeech:6 dev-qt/qtsvg:6 dev-qt/qttools:6[assistant,linguist] dev-qt/qtwebengine:6 media-libs/libvorbis media-libs/tiff:0 virtual/zlib ffmpeg? ( media-video/ffmpeg:0= ) zim? ( app-arch/libzim ) epwing? ( dev-libs/eb )
+DESCRIPTION=The Next Generation GoldenDict. Feature-rich dictionary lookup program
+EAPI=8
+HOMEPAGE=https://xiaoyifang.github.io/goldendict-ng
+INHERIT=cmake plocale
+IUSE=ffmpeg zim epwing
+KEYWORDS=~amd64
+LICENSE=GPL-3
+RDEPEND=app-arch/bzip2 app-i18n/opencc app-text/hunspell dev-libs/lzo dev-libs/xapian app-arch/xz-utils dev-libs/kdsingleapplication dev-libs/eb dev-libs/libfmt dev-cpp/tomlplusplus dev-qt/qtbase:6[X,gui,network,sql,widgets,xml] dev-qt/qtmultimedia:6 dev-qt/qtspeech:6 dev-qt/qtsvg:6 dev-qt/qttools:6[assistant,linguist] dev-qt/qtwebengine:6 media-libs/libvorbis media-libs/tiff:0 virtual/zlib ffmpeg? ( media-video/ffmpeg:0= ) zim? ( app-arch/libzim ) epwing? ( dev-libs/eb )
+SLOT=0
+SRC_URI=https://codeload.github.com/xiaoyifang/goldendict-ng/tar.gz/refs/tags/v26.1.1-Release.5491ffca -> goldendict-ng-26.1.1.tar.gz
+_eclasses_=toolchain-funcs	5195689ff6a73b0e789acfa09d4fbcb9	flag-o-matic	fd3558f73f6503093adee69adf41020d	multiprocessing	45d0620f25c2f063ad6276ecd9ed9399	ninja-utils	d063ea1900a793f93eb095010d6d9156	xdg-utils	42869b3c8d86a70ef3cf75165a395e09	cmake	3395ce6618fc5c7af03335471b896644	plocale	980baab6fd56db6149d0a9396e0b21c9
+_md5_=5c4c3eb570c7d8e5f1df2e8b7373bc80

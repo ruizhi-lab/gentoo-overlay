@@ -1,0 +1,14 @@
+DEFINED_PHASES=install postinst postrm
+DESCRIPTION=Compare, merge files and folders using simple, powerful commands.
+EAPI=8
+HOMEPAGE=https://www.scootersoftware.com
+INHERIT=desktop xdg-utils
+IUSE=kde
+KEYWORDS=amd64
+LICENSE=Bcompare
+RDEPEND=app-arch/bzip2 app-arch/p7zip app-arch/unrar dev-libs/libqt6pas dev-qt/qtbase:6[gui,widgets] sys-apps/dbus sys-libs/zlib x11-libs/libX11 x11-libs/libxkbcommon
+RESTRICT=bindist mirror strip
+SLOT=0
+SRC_URI=https://www.scootersoftware.com/bcompare-5.2.0.31950.x86_64.tar.gz
+_eclasses_=desktop	26d57169ca094c04be416993844ec8bc	xdg-utils	42869b3c8d86a70ef3cf75165a395e09
+_md5_=683b390396cb66dd99686cd2c311b272
