@@ -53,14 +53,18 @@ BDEPEND="
 "
 
 pkg_pretend() {
-	local stale_file
+	local stale_file owners
 	stale_file=$(find "${ROOT%/}/usr/share/locale" -type f -path "*/LC_MESSAGES/latte-dock.mo" 2>/dev/null | head -n 1)
 
 	if [[ -n ${stale_file} ]]; then
-		ewarn "Detected legacy unowned translation file from old manual/debug installs:"
-		ewarn "  ${stale_file}"
-		ewarn "Please clean stale files before merge to avoid file-collision warnings:"
-		ewarn "  find /usr/share/locale -type f -path '*/LC_MESSAGES/latte-dock.mo' -delete"
+		owners=$(portageq owners "${ROOT%/}" "${stale_file}" 2>/dev/null || true)
+
+		if [[ -z ${owners} ]]; then
+			ewarn "Detected legacy unowned translation file from old manual/debug installs:"
+			ewarn "  ${stale_file}"
+			ewarn "Please clean stale files before merge to avoid file-collision warnings:"
+			ewarn "  find /usr/share/locale -type f -path '*/LC_MESSAGES/latte-dock.mo' -delete"
+		fi
 	fi
 }
 
@@ -70,6 +74,22 @@ src_configure() {
 	)
 
 	cmake_src_configure
+}
+
+src_install() {
+	cmake_src_install
+
+	local taskmanager_qml_dir="/usr/$(get_libdir)/qt6/qml/org/kde/plasma/private/taskmanager"
+
+	if [[ -e "${EROOT}${taskmanager_qml_dir}/qmldir" ]]; then
+		einfo "Using system org.kde.plasma.private.taskmanager QML module."
+	else
+		einfo "Installing Latte fallback org.kde.plasma.private.taskmanager QML module."
+		insinto "${taskmanager_qml_dir}"
+		doins compat/qml/org/kde/plasma/private/taskmanager/qmldir
+		doins compat/qml/org/kde/plasma/private/taskmanager/Backend.qml
+		doins compat/qml/org/kde/plasma/private/taskmanager/SmartLauncherItem.qml
+	fi
 }
 
 pkg_postinst() {
