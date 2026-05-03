@@ -50,22 +50,6 @@ BDEPEND="
 	virtual/pkgconfig
 "
 
-pkg_pretend() {
-	local stale_file owners
-	stale_file=$(find "${ROOT%/}/usr/share/locale" -type f -path "*/LC_MESSAGES/latte-dock.mo" 2>/dev/null | head -n 1)
-
-	if [[ -n ${stale_file} ]]; then
-		owners=$(portageq owners "${ROOT%/}" "${stale_file}" 2>/dev/null || true)
-
-		if [[ -z ${owners} ]]; then
-			ewarn "Detected legacy unowned translation file from old manual/debug installs:"
-			ewarn "  ${stale_file}"
-			ewarn "Please clean stale files before merge to avoid file-collision warnings:"
-			ewarn "  find /usr/share/locale -type f -path '*/LC_MESSAGES/latte-dock.mo' -delete"
-		fi
-	fi
-}
-
 src_configure() {
 	local mycmakeargs=(
 		-DBUILD_TESTING=OFF
