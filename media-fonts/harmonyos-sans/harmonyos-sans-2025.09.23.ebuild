@@ -1,32 +1,29 @@
-# Copyright 2026 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 inherit font
 
-DESCRIPTION="HarmonyOS Sans fonts (华为鸿蒙字体)"
-HOMEPAGE="https://developer.huawei.com/consumer/cn/design/resource/"
-SRC_URI="https://alliance-communityfile-drcn.dbankcdn.com/...zip -> ${P}.zip"
+DESCRIPTION="HarmonyOS Sans fonts"
+HOMEPAGE="https://developer.huawei.com/consumer/en/doc/design-guides/font-0000001828772001"
+SRC_URI="https://github.com/huawei-fonts/HarmonyOS-Sans/raw/33ab3b81b92c01f5e340c89960872bee174d8704/HarmonyOS%20Sans.zip -> ${P}.zip"
+S="${WORKDIR}/HarmonyOS Sans"
 
-LICENSE="LicenseRef-custom"
+LICENSE="HarmonyOS-Sans"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
+RESTRICT="mirror"
 
 BDEPEND="app-arch/unzip"
 
-S="${WORKDIR}/HarmonyOS Sans 字体"
-
 FONT_SUFFIX="ttf"
 
-RESTRICT="mirror"
-
 src_install() {
-    insinto "${FONTDIR}"
+	insinto "${FONTDIR}"
+	find . -type f -name "*.ttf" -print0 | while IFS= read -r -d '' font_file; do
+		doins "${font_file}"
+	done
 
-    find . -type f -name "*.ttf" -print0 | while IFS= read -r -d '' f; do
-        doins "$f"
-    done
-
-    dodoc LICENSE.txt
+	dodoc HarmonyOS_Sans/LICENSE.txt
 }

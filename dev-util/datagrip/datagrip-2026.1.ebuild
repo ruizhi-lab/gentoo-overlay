@@ -8,16 +8,16 @@ inherit desktop wrapper
 DESCRIPTION="A cross-platform IDE for Databases and SQL by JetBrains"
 HOMEPAGE="https://www.jetbrains.com/datagrip/"
 
-LICENSE="|| ( JetBrains-business JetBrains-educational JetBrains-classroom JetBrains-individual )"
-LICENSE+=" 0BSD Apache-2.0 BSD BSD-2 CC0-1.0 CC-BY-2.5 CC-BY-3.0 CC-BY-4.0 CDDL-1.1 CPL-1.0 EPL-1.0 GPL-2"
-LICENSE+=" GPL-2-with-classpath-exception ISC JSON LGPL-2.1 LGPL-3 LGPL-3+ libpng MIT MPL-1.1 MPL-2.0"
-LICENSE+=" OFL-1.1 public-domain unicode Unlicense W3C ZLIB ZPL"
+SRC_URI="https://download.jetbrains.com/${PN}/${P}.tar.gz"
+S="${WORKDIR}/DataGrip-${PV}"
+
+LICENSE="|| ( JetBrains-business JetBrains-classroom JetBrains-educational JetBrains-individual ) Apache-2.0 BSD BSD-2 CC0-1.0 CC-BY-2.5 CC-BY-3.0 CC-BY-4.0 CPL-1.0 CDDL CDDL-1.1 EPL-1.0 EPL-2.0 GPL-2 GPL-2-with-classpath-exception ISC JDOM LGPL-2.1 LGPL-3 MIT MPL-1.1 MPL-2.0 OFL-1.1 PYTHON Unicode-DFS-2016 Unlicense UPL-1.0 ZLIB"
 
 SLOT="0"
 KEYWORDS="~amd64"
-RESTRICT="bindist mirror splitdebug"
 IUSE="wayland"
-QA_PREBUILT="opt/${P}/*"
+RESTRICT="bindist mirror splitdebug"
+QA_PREBUILT="opt/${PN}/*"
 RDEPEND="
 	sys-process/audit
 	dev-libs/libdbusmenu
@@ -32,11 +32,6 @@ RDEPEND="
 	x11-libs/libXi
 	x11-libs/libXrandr
 "
-
-MY_PN="DataGrip"
-SRC_URI="https://download.jetbrains.com/${PN}/${PN}-${PV}.tar.gz -> ${P}.tar.gz"
-
-S="${WORKDIR}/DataGrip-${PV}"
 
 src_prepare() {
 	default
@@ -79,10 +74,9 @@ src_install() {
 
 	make_wrapper "${PN}" "${dir}"/bin/"${PN}"
 	doicon -s scalable bin/"${PN}".svg
-	make_desktop_entry "${PN}" "${MY_PN}" "${PN}" "Development;IDE;"
+	make_desktop_entry "${PN}" "DataGrip" "${PN}" "Development;IDE;"
 
 	# recommended by: https://confluence.jetbrains.com/display/IDEADEV/Inotify+Watches+Limit
 	dodir /usr/lib/sysctl.d/
 	echo "fs.inotify.max_user_watches = 524288" > "${D}/usr/lib/sysctl.d/30-${PN}-inotify-watches.conf" || die
 }
-

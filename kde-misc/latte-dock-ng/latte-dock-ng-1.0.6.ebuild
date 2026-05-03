@@ -63,7 +63,7 @@ src_install() {
 
 	local taskmanager_qml_dir="/usr/$(get_libdir)/qt6/qml/org/kde/plasma/private/taskmanager"
 
-	if [[ -e "${EROOT}${taskmanager_qml_dir}/qmldir" ]]; then
+	if [[ -e "${ESYSROOT}${taskmanager_qml_dir}/qmldir" ]]; then
 		einfo "Using system org.kde.plasma.private.taskmanager QML module."
 	else
 		einfo "Installing Latte fallback org.kde.plasma.private.taskmanager QML module."

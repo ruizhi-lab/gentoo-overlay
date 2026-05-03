@@ -1,40 +1,30 @@
-# xorgxrdp-0.10.4.ebuild
+# Copyright 1999-2026 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
 EAPI=8
-inherit git-r3
 
-DESCRIPTION="Xorg driver modules for XRDP"
+DESCRIPTION="Xorg driver modules for xrdp"
 HOMEPAGE="https://github.com/neutrinolabs/xorgxrdp"
-EGIT_REPO_URI="https://github.com/neutrinolabs/xorgxrdp.git"
-SRC_URI=""
+SRC_URI="https://github.com/neutrinolabs/${PN}/releases/download/v${PV}/${P}.tar.gz"
 
-LICENSE="Apache-2.0"
+LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64"
 
-RDEPEND="x11-base/xorg-server dev-lang/nasm net-misc/xrdp"
+RDEPEND="
+	net-misc/xrdp
+	x11-base/xorg-server
+"
 DEPEND="${RDEPEND}"
-
-src_prepare() {
-    default
-    EPATCH="${EPATCH:-patch}"
-}
+BDEPEND="
+	dev-lang/nasm
+	virtual/pkgconfig
+"
 
 src_configure() {
-    ./bootstrap
-    ./configure --prefix=/usr --sysconfdir=/etc \
-        XRDP_CFLAGS="-I/usr/include -I/usr/include/xrdp" \
-        XRDP_LIBS="-L/usr/lib"
-}
-
-src_compile() {
-    emake
-}
-
-src_install() {
-    emake DESTDIR="${D}" install
+	econf --disable-glamor
 }
 
 pkg_postinst() {
-    needrelink_xorg_modules
+	elog "Rebuild xorgxrdp after major xorg-server upgrades if the module ABI changes."
 }
-

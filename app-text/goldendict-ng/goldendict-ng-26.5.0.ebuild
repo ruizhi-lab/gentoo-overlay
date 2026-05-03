@@ -3,7 +3,7 @@
 
 EAPI=8
 
-inherit cmake plocale
+inherit cmake
 
 DESCRIPTION="The Next Generation GoldenDict. Feature-rich dictionary lookup program"
 HOMEPAGE="https://xiaoyifang.github.io/goldendict-ng"
@@ -24,7 +24,6 @@ RDEPEND="
 	dev-libs/xapian
 	app-arch/xz-utils
 	dev-libs/kdsingleapplication
-	dev-libs/eb
 	dev-libs/libfmt
 	dev-cpp/tomlplusplus
 	dev-qt/qtbase:6[X,gui,network,sql,widgets,xml]
@@ -64,4 +63,3 @@ src_configure() {
 
 	cmake_src_configure
 }
-
