@@ -1,9 +1,14 @@
+commit 9079f665644c921dbf1a4939a847c35909c8da52
+Author: Ruizhi Zhong <ruizhi.zhong@outlook.com>
+Date:   Sun May 3 14:00:39 2026 +0800
+
+    fix shutdown/logout hang by handling session-end quit
+
+diff --git a/app/main.cpp b/app/main.cpp
+index 60e5ffc2e..0c29f02f4 100644
 --- a/app/main.cpp
 +++ b/app/main.cpp
-@@ -260,10 +260,18 @@
-     //! based on spectacle solution at:
-     //!   - https://bugs.kde.org/show_bug.cgi?id=430411
-     //!   - https://invent.kde.org/graphics/spectacle/-/commit/8db27170d63f8a4aaff09615e51e3cc0fb115c4d
+@@ -263,8 +263,16 @@ int main(int argc, char **argv)
      auto disableSessionManagement = [](QSessionManager &sm) {
          sm.setRestartHint(QSessionManager::RestartNever);
      };
@@ -19,7 +24,10 @@
 +
 +    QObject::connect(&app, &QGuiApplication::commitDataRequest, quitOnSessionEnd);
 +    QObject::connect(&app, &QGuiApplication::saveStateRequest, quitOnSessionEnd);
-@@ -431,8 +439,8 @@
+ 
+     //! choose layout for startup
+     bool defaultLayoutOnStartup = false;
+@@ -430,8 +438,8 @@ int main(int argc, char **argv)
          qGuiApp->exit();
      };
  
