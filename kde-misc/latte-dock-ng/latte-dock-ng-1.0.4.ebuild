@@ -50,6 +50,10 @@ BDEPEND="
 	virtual/pkgconfig
 "
 
+PATCHES=(
+	"${FILESDIR}/${P}-session-quit.patch"
+)
+
 pkg_pretend() {
 	local stale_file
 	stale_file=$(find "${ROOT%/}/usr/share/locale" -type f -path "*/LC_MESSAGES/latte-dock.mo" 2>/dev/null | head -n 1)

@@ -1,0 +1,31 @@
+--- a/app/main.cpp
++++ b/app/main.cpp
+@@ -260,10 +260,18 @@
+     //! based on spectacle solution at:
+     //!   - https://bugs.kde.org/show_bug.cgi?id=430411
+     //!   - https://invent.kde.org/graphics/spectacle/-/commit/8db27170d63f8a4aaff09615e51e3cc0fb115c4d
+     auto disableSessionManagement = [](QSessionManager &sm) {
+         sm.setRestartHint(QSessionManager::RestartNever);
+     };
+-    QObject::connect(&app, &QGuiApplication::commitDataRequest, disableSessionManagement);
+-    QObject::connect(&app, &QGuiApplication::saveStateRequest, disableSessionManagement);
++
++    auto quitOnSessionEnd = [&app, disableSessionManagement](QSessionManager &sm) {
++        disableSessionManagement(sm);
++        // Ensure the process exits during logout/shutdown even if session
++        // managers do not force-terminate us immediately.
++        QMetaObject::invokeMethod(&app, "quit", Qt::QueuedConnection);
++    };
++
++    QObject::connect(&app, &QGuiApplication::commitDataRequest, quitOnSessionEnd);
++    QObject::connect(&app, &QGuiApplication::saveStateRequest, quitOnSessionEnd);
+@@ -431,8 +439,8 @@
+         qGuiApp->exit();
+     };
+ 
+-    std::signal(SIGKILL, signal_handler);
+     std::signal(SIGINT, signal_handler);
++    std::signal(SIGTERM, signal_handler);
+ 
+     Latte::Corona corona(defaultLayoutOnStartup, layoutNameOnStartup, addViewTemplateNameOnStartup, memoryUsage);
+     KDBusService service(KDBusService::Unique);
