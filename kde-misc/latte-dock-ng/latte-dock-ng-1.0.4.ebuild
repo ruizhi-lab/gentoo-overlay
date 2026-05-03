@@ -3,19 +3,17 @@
 
 EAPI=8
 
-inherit cmake
+inherit cmake xdg
 
 DESCRIPTION="Wayland-first Latte Dock NG for Plasma 6.6+"
 HOMEPAGE="https://github.com/ruizhi-lab/latte-dock-ng"
 SRC_URI="https://github.com/ruizhi-lab/latte-dock-ng/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz"
 
-S="${WORKDIR}/${PN}-v${PV}"
-
-LICENSE="GPL-3"
+LICENSE="GPL-2+ GPL-3+ LGPL-2+ || ( LGPL-2.1 LGPL-3 )"
 SLOT="0"
 KEYWORDS="~amd64"
 
-RDEPEND="
+COMMON_DEPEND="
 	>=dev-libs/plasma-wayland-protocols-1.6
 	>=dev-libs/wayland-1.22
 	>=dev-qt/qtbase-6.6:6[dbus,gui,widgets]
@@ -28,6 +26,7 @@ RDEPEND="
 	>=kde-frameworks/kdbusaddons-6.0:6
 	>=kde-frameworks/kdeclarative-6.0:6
 	>=kde-frameworks/kglobalaccel-6.0:6
+	>=kde-frameworks/kguiaddons-6.0:6
 	>=kde-frameworks/ki18n-6.0:6
 	>=kde-frameworks/kiconthemes-6.0:6
 	>=kde-frameworks/kio-6.0:6
@@ -44,7 +43,8 @@ RDEPEND="
 	>=kde-plasma/plasma-activities-stats-6.6:6
 	>=kde-plasma/plasma-workspace-6.6:6
 "
-DEPEND="${RDEPEND}"
+RDEPEND="${COMMON_DEPEND}"
+DEPEND="${COMMON_DEPEND}"
 BDEPEND="
 	>=kde-frameworks/extra-cmake-modules-6.0
 	virtual/pkgconfig
@@ -56,4 +56,12 @@ src_configure() {
 	)
 
 	cmake_src_configure
+}
+
+pkg_postinst() {
+	xdg_pkg_postinst
+}
+
+pkg_postrm() {
+	xdg_pkg_postrm
 }
