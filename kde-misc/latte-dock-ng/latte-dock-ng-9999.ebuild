@@ -60,9 +60,33 @@ src_configure() {
 	cmake_src_configure
 }
 
-# 1.0.10+ ships compat/qml/CMakeLists.txt that conditionally installs a
-# fallback org.kde.plasma.private.taskmanager when the system doesn't ship
-# one, so cmake_src_install handles it; no manual doins needed.
+src_install() {
+	cmake_src_install
+
+	# 1.0.10's compat/qml/CMakeLists.txt installs the fallback
+	# org.kde.plasma.private.taskmanager *only* when the host system doesn't
+	# already provide a qmldir there. That's correct for cmake-direct users,
+	# but on Gentoo it would skip the install when an earlier ebuild revision
+	# (e.g. =1.0.9-r1) put the fallback there via doins — those files are
+	# owned by the older slot and Portage drops them on upgrade, leaving the
+	# system without the module. Re-install unconditionally so 1.0.10 owns
+	# the files in its own vdb entry.
+	local taskmanager_qml_dir="/usr/$(get_libdir)/qt6/qml/org/kde/plasma/private/taskmanager"
+
+	if [[ -e "${ESYSROOT}${taskmanager_qml_dir}/qmldir" \
+			&& ! -e "${ESYSROOT}${taskmanager_qml_dir}/.latte-fallback-module" ]]; then
+		einfo "System org.kde.plasma.private.taskmanager appears to be upstream; not overwriting."
+	else
+		einfo "Installing Latte fallback org.kde.plasma.private.taskmanager QML module."
+		insinto "${taskmanager_qml_dir}"
+		doins "${S}"/compat/qml/org/kde/plasma/private/taskmanager/qmldir
+		doins "${S}"/compat/qml/org/kde/plasma/private/taskmanager/Backend.qml
+		doins "${S}"/compat/qml/org/kde/plasma/private/taskmanager/SmartLauncherItem.qml
+		# Marker for cmake-direct upgrades and future ebuild revisions to
+		# recognize that this is our shim and may be safely overwritten.
+		: > "${ED}${taskmanager_qml_dir}/.latte-fallback-module"
+	fi
+}
 
 pkg_postinst() {
 	xdg_pkg_postinst
