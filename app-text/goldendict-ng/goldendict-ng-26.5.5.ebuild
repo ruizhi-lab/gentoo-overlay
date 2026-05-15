@@ -7,9 +7,9 @@ inherit cmake
 
 DESCRIPTION="The Next Generation GoldenDict. Feature-rich dictionary lookup program"
 HOMEPAGE="https://xiaoyifang.github.io/goldendict-ng"
-SRC_URI="https://codeload.github.com/xiaoyifang/goldendict-ng/tar.gz/refs/tags/v${PV}-Release.87b8c6c6 -> ${P}.tar.gz"
+SRC_URI="https://codeload.github.com/xiaoyifang/goldendict-ng/tar.gz/refs/tags/v${PV} -> ${P}.tar.gz"
 
-S="${WORKDIR}/${PN}-${PV}-Release.87b8c6c6"
+S="${WORKDIR}/${PN}-${PV}"
 
 LICENSE="GPL-3"
 SLOT="0"
