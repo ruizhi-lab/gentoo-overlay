@@ -30,6 +30,7 @@ COMMON_DEPEND="
 	>=kde-frameworks/ki18n-6.0:6
 	>=kde-frameworks/kiconthemes-6.0:6
 	>=kde-frameworks/kio-6.0:6
+	>=kde-frameworks/kitemmodels-6.0:6
 	>=kde-frameworks/knewstuff-6.0:6
 	>=kde-frameworks/knotifications-6.0:6
 	>=kde-frameworks/kpackage-6.0:6

@@ -3,11 +3,14 @@
 
 EAPI=8
 
-inherit desktop xdg-utils
+inherit desktop flag-o-matic toolchain-funcs xdg-utils
 
 DESCRIPTION="Compare, merge files and folders using simple, powerful commands"
 HOMEPAGE="https://www.scootersoftware.com"
-SRC_URI="https://www.scootersoftware.com/${P}.x86_64.tar.gz"
+SRC_URI="
+	https://www.scootersoftware.com/${P}.x86_64.tar.gz
+	https://downloads.sourceforge.net/sevenzip/7-Zip/26.00/7z2600-src.tar.xz
+"
 
 LICENSE="Bcompare"
 SLOT="0"
@@ -17,8 +20,8 @@ QA_PREBUILT="usr/lib/beyondcompare/* usr/lib*/qt6/plugins/kf6/kfileitemaction/bc
 
 RESTRICT="bindist mirror strip"
 RDEPEND="
+	app-arch/7zip
 	app-arch/bzip2
-	app-arch/p7zip
 	app-arch/unrar
 	dev-libs/libqt6pas
 	dev-qt/qtbase:6[gui,widgets]
@@ -26,54 +29,73 @@ RDEPEND="
 	virtual/zlib
 	x11-libs/libX11
 	x11-libs/libxkbcommon
-	"
+"
+BDEPEND="
+	app-arch/xz-utils[extra-filters(+)]
+"
+
+src_unpack() {
+	unpack ${P}.x86_64.tar.gz
+	unpack 7z2600-src.tar.xz
+}
+
+src_compile() {
+	# Remove -Werror to avoid build failures from harmless warnings
+	sed -i 's/-Werror //g' "${WORKDIR}/CPP/7zip/7zip_gcc.mak" || die
+
+	pushd "${WORKDIR}/CPP/7zip/Bundles/Format7zF" > /dev/null || die
+	emake -f makefile.gcc \
+		CC="$(tc-getCC)" \
+		CXX="$(tc-getCXX)"
+	popd > /dev/null || die
+}
+
 src_install() {
 	local BC_LIB="/usr/lib/beyondcompare"
 	local BC_BIN="/usr/bin"
 
-	# 1. Regression to original file set (Minimalist approach)
-	# We ONLY install the absolute essentials to avoid library conflicts
+	# Install lib7z.so built from 7-zip source
 	exeinto "${BC_LIB}"
+	newexe "${WORKDIR}/CPP/7zip/Bundles/Format7zF/_o/7z.so" lib7z.so
+
+	# BCompare binary
 	doexe BCompare
 
 	insinto "${BC_LIB}"
 	doins BCompare.mad libcloudstorage.so.22.0
 
-	# Use system's p7zip for 7z support (Just like your original version)
-	dosym ../$(get_libdir)/p7zip/7z.so "${BC_LIB}/lib7z.so"
-	# Ensure bzip2 compatibility
-	dosym ../$(get_libdir)/libbz2.so.1 "${BC_LIB}/libbz2.so.1.0"
+	# bzip2 compatibility
+	dosym ../../$(get_libdir)/libbz2.so.1 "${BC_LIB}/libbz2.so.1.0"
 
-	# 2. KDE 6 Context Menu Plugin (Optional)
+	# KDE 6 Context Menu Plugin (Optional)
 	if use kde; then
 		local KDE6_PLUGINS="/usr/$(get_libdir)/qt6/plugins/kf6/kfileitemaction"
-		# Use newexe to ensure 0755 execution permissions
 		exeinto "${KDE6_PLUGINS}"
 		newexe "ext/bcompare_ext_kde6.amd64.so" "bcompare_ext_kde6.so"
 	fi
 
-	# 3. Optimized Wrapper Script (Silence errors + Force Stability)
+	# Wrapper Script
 	dodir "${BC_BIN}"
 	cat <<-EOF >"${ED}${BC_BIN}/bcompare" || die
-#!/bin/sh
-# Force X11 backend for stability
-export QT_QPA_PLATFORM=xcb
+	#!/bin/sh
+	# Force X11 backend for stability
+	export QT_QPA_PLATFORM=xcb
 
-# Suppress Qt noise (QComboBox warnings, etc.)
-export QT_LOGGING_RULES="qt.core.qobject.connect.warning=false;*.debug=false"
+	# Suppress Qt noise (QComboBox warnings, etc.)
+	export QT_LOGGING_RULES="qt.core.qobject.connect.warning=false;*.debug=false"
 
-# Use basic dialogs to prevent crashes on high-end desktop environments
-export QT_NO_NATIVE_FILE_DIALOGS=1
+	# Use basic dialogs to prevent crashes on high-end desktop environments
+	export QT_NO_NATIVE_FILE_DIALOGS=1
 
-# Prioritize our minimal lib dir
-export LD_LIBRARY_PATH="${BC_LIB}:\${LD_LIBRARY_PATH}"
+	# Prioritize our minimal lib dir
+	export LD_LIBRARY_PATH="${BC_LIB}:\${LD_LIBRARY_PATH}"
 
-# Execute and redirect stderr to silence QThreadStorage cleanup messages
-exec "${BC_LIB}/BCompare" "\$@" 2>/dev/null
-EOF
+	# Execute and redirect stderr to silence QThreadStorage cleanup messages
+	exec "${BC_LIB}/BCompare" "\$@" 2>/dev/null
+	EOF
 	fperms +x "${BC_BIN}/bcompare"
 
-	# 4. Integration Files
+	# Integration Files
 	domenu bcompare.desktop
 	doicon bcompare.png
 	insinto /usr/share/mime/packages
@@ -84,7 +106,7 @@ EOF
 
 	dodoc -r help/*
 
-	# 5. revdep-rebuild mask
+	# revdep-rebuild mask
 	insinto /etc/revdep-rebuild
 	echo "SEARCH_DIRS_MASK=\"${BC_LIB}\"" > "${T}/20${PN}"
 	doins "${T}/20${PN}"
