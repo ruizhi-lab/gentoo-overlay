@@ -7,7 +7,7 @@ inherit cmake xdg
 
 DESCRIPTION="Wayland-first Latte Dock NG for Plasma 6.6+"
 HOMEPAGE="https://github.com/ruizhi-lab/latte-dock-ng"
-SRC_URI="https://github.com/ruizhi-lab/latte-dock-ng/archive/refs/tags/${PV}.tar.gz -> ${P}.tar.gz"
+SRC_URI="https://github.com/ruizhi-lab/latte-dock-ng/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz"
 
 LICENSE="GPL-2+ GPL-3+ LGPL-2+ || ( LGPL-2.1 LGPL-3 )"
 SLOT="0"
