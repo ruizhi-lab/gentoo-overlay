@@ -62,30 +62,6 @@ src_configure() {
 
 src_install() {
 	cmake_src_install
-
-	# Always install the fallback org.kde.plasma.private.taskmanager
-	# unconditionally, so the files are owned by THIS package version.
-	# Earlier revisions tried to skip when the live system already had a
-	# qmldir there, but that path is broken on -rN -> -r(N+1) upgrades:
-	# the previous revision's files are still on disk during src_install
-	# (Portage hasn't unmerged the old slot yet), the conditional fires
-	# 'system has it, skip', and the new package ends up not owning the
-	# files. Portage then drops them when unmerging the old revision and
-	# the dock comes up empty.
-	#
-	# Plasma 6.6+ doesn't ship this private module; if a future Plasma
-	# release reintroduces it via plasma-workspace, the file collision
-	# will be surfaced by Portage at install time and can be addressed
-	# then.
-	local taskmanager_qml_dir="/usr/$(get_libdir)/qt6/qml/org/kde/plasma/private/taskmanager"
-	einfo "Installing Latte fallback org.kde.plasma.private.taskmanager QML module."
-	insinto "${taskmanager_qml_dir}"
-	doins "${S}"/compat/qml/org/kde/plasma/private/taskmanager/qmldir
-	doins "${S}"/compat/qml/org/kde/plasma/private/taskmanager/Backend.qml
-	doins "${S}"/compat/qml/org/kde/plasma/private/taskmanager/SmartLauncherItem.qml
-	# Marker so future revisions / cmake-direct upgrades can recognize
-	# our shim and overwrite it cleanly.
-	: > "${ED}${taskmanager_qml_dir}/.latte-fallback-module"
 }
 
 pkg_postinst() {
