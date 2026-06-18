@@ -3,7 +3,7 @@
 
 EAPI=8
 
-inherit cmake git-r3 xdg
+inherit ecm git-r3 xdg
 
 DESCRIPTION="Wayland-first Latte Dock NG for Plasma 6.5+"
 HOMEPAGE="https://github.com/ruizhi-lab/latte-dock-ng"
@@ -51,6 +51,7 @@ COMMON_DEPEND="
 RDEPEND="${COMMON_DEPEND}"
 DEPEND="${COMMON_DEPEND}"
 BDEPEND="
+	>=dev-qt/qtbase-6.6:6
 	>=kde-frameworks/extra-cmake-modules-6.0
 	virtual/pkgconfig
 "
