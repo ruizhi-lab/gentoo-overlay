@@ -5,7 +5,7 @@ EAPI=8
 
 inherit cmake git-r3 xdg
 
-DESCRIPTION="Wayland-first Latte Dock NG for Plasma 6.6+"
+DESCRIPTION="Wayland-first Latte Dock NG for Plasma 6.5+"
 HOMEPAGE="https://github.com/ruizhi-lab/latte-dock-ng"
 EGIT_REPO_URI="https://github.com/ruizhi-lab/latte-dock-ng.git"
 EGIT_BRANCH="main"
@@ -22,6 +22,7 @@ COMMON_DEPEND="
 	>=dev-qt/qtdeclarative-6.6:6
 	>=dev-qt/qtwayland-6.6:6
 	>=kde-frameworks/karchive-6.0:6
+	>=kde-frameworks/kcmutils-6.0:6
 	>=kde-frameworks/kconfig-6.0:6
 	>=kde-frameworks/kcoreaddons-6.0:6
 	>=kde-frameworks/kcrash-6.0:6
@@ -32,18 +33,20 @@ COMMON_DEPEND="
 	>=kde-frameworks/ki18n-6.0:6
 	>=kde-frameworks/kiconthemes-6.0:6
 	>=kde-frameworks/kio-6.0:6
+	>=kde-frameworks/kirigami-6.0:6
 	>=kde-frameworks/knewstuff-6.0:6
 	>=kde-frameworks/knotifications-6.0:6
 	>=kde-frameworks/kpackage-6.0:6
 	>=kde-frameworks/ksvg-6.0:6
 	>=kde-frameworks/kwindowsystem-6.0:6
 	>=kde-frameworks/kxmlgui-6.0:6
-	>=kde-plasma/kpipewire-6.6:6
-	>=kde-plasma/kwayland-6.6:6
-	>=kde-plasma/libplasma-6.6:6
-	>=kde-plasma/plasma-activities-6.6:6
-	>=kde-plasma/plasma-activities-stats-6.6:6
-	>=kde-plasma/plasma-workspace-6.6:6
+	>=kde-plasma/kpipewire-6.5:6
+	>=kde-plasma/kwayland-6.5:6
+	>=kde-plasma/layer-shell-qt-6.5:6
+	>=kde-plasma/libplasma-6.5:6
+	>=kde-plasma/plasma-activities-6.5:6
+	>=kde-plasma/plasma-activities-stats-6.5:6
+	>=kde-plasma/plasma-workspace-6.5:6
 "
 RDEPEND="${COMMON_DEPEND}"
 DEPEND="${COMMON_DEPEND}"
