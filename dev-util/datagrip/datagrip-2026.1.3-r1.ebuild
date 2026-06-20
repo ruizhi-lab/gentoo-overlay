@@ -48,7 +48,7 @@ src_prepare() {
 	for arch in "${remove_arches[@]}"
 	do
 		echo "Removing files for $arch"
-		find . -name "*$arch*" -exec rm -rf {} \; || true
+		find . -depth -name "*$arch*" -exec rm -rf -- {} + || die
 	done
 
 	if use wayland; then
@@ -71,6 +71,11 @@ src_install() {
 
 	fperms 755 "${dir}"/jbr/bin/{java,javac,javadoc,jcmd,jdb,jfr,jhsdb,jinfo,jmap,jps,jrunscript,jstack,jstat,keytool,rmiregistry,serialver}
 	fperms 755 "${dir}"/jbr/lib/{chrome-sandbox,jcef_helper,jexec,jspawnhelper}
+	fperms 755 "${dir}"/jbr/bin/jwebserver
+	fperms 755 "${dir}"/jbr/lib/cef_server
+	fperms 755 "${dir}"/plugins/platform-ijent-impl/ijent-x86_64-unknown-linux-musl-release
+	fperms 755 "${dir}"/plugins/remote-dev-server/bin/launcher.sh
+	fperms 755 "${dir}"/plugins/remote-dev-server/selfcontained/bin/{Xvfb,xkbcomp}
 
 	make_wrapper "${PN}" "${dir}"/bin/"${PN}"
 	doicon -s scalable bin/"${PN}".svg

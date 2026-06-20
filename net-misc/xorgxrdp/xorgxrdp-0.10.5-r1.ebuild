@@ -13,7 +13,7 @@ KEYWORDS="~amd64"
 
 RDEPEND="
 	>=net-misc/xrdp-0.10.2
-	x11-base/xorg-server
+	x11-base/xorg-server:=[xorg]
 "
 DEPEND="${RDEPEND}"
 BDEPEND="

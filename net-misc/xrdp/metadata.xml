@@ -5,6 +5,9 @@
 		<name>Ruizhi Zhong</name>
 		<email>ruizhi.zhong88@gmail.com</email>
 	</maintainer>
+	<use>
+		<flag name="fuse">Enable FUSE support for clipboard file and drive redirection.</flag>
+	</use>
 	<upstream>
 		<remote-id type="github">neutrinolabs/xrdp</remote-id>
 	</upstream>
