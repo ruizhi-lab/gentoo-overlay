@@ -19,5 +19,6 @@ src_install() {
 	insinto /opt/quarto
 	doins -r .
 	fperms -R +x /opt/quarto/bin
+	newman share/man/quarto-man.man quarto.1
 	dosym ../../opt/quarto/bin/quarto /usr/bin/quarto
 }

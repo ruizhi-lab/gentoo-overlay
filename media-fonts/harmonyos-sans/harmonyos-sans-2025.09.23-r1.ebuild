@@ -17,13 +17,19 @@ RESTRICT="mirror"
 
 BDEPEND="app-arch/unzip"
 
+FONT_S=(
+	"${S}"/HarmonyOS_Sans
+	"${S}"/HarmonyOS_Sans_Condensed
+	"${S}"/HarmonyOS_Sans_Condensed_Italic
+	"${S}"/HarmonyOS_Sans_Italic
+	"${S}"/HarmonyOS_Sans_Naskh_Arabic
+	"${S}"/HarmonyOS_Sans_Naskh_Arabic_UI
+	"${S}"/HarmonyOS_Sans_SC
+	"${S}"/HarmonyOS_Sans_TC
+)
 FONT_SUFFIX="ttf"
 
 src_install() {
-	insinto "${FONTDIR}"
-	find . -type f -name "*.ttf" -print0 | while IFS= read -r -d '' font_file; do
-		doins "${font_file}"
-	done
-
+	font_src_install
 	dodoc HarmonyOS_Sans/LICENSE.txt
 }
