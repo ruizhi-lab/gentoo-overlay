@@ -5,7 +5,14 @@
 		<name>Ruizhi Zhong</name>
 		<email>ruizhi.zhong88@gmail.com</email>
 	</maintainer>
+	<use>
+		<flag name="caja">Install the Caja extension.</flag>
+		<flag name="nautilus">Install the Nautilus extension.</flag>
+		<flag name="nemo">Install the Nemo extension.</flag>
+		<flag name="thunar">Install the Thunar extension.</flag>
+	</use>
 	<upstream>
 		<bugs-to>https://www.scootersoftware.com/support</bugs-to>
+		<remote-id type="sourceforge">sevenzip</remote-id>
 	</upstream>
 </pkgmetadata>

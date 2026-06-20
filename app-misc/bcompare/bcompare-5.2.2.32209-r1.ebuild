@@ -3,7 +3,7 @@
 
 EAPI=8
 
-inherit desktop flag-o-matic toolchain-funcs xdg-utils
+inherit desktop toolchain-funcs xdg-utils
 
 DESCRIPTION="Compare, merge files and folders using simple, powerful commands"
 HOMEPAGE="https://www.scootersoftware.com"
@@ -15,8 +15,16 @@ SRC_URI="
 LICENSE="Bcompare"
 SLOT="0"
 KEYWORDS="amd64"
-IUSE="kde"
-QA_PREBUILT="usr/lib/beyondcompare/* usr/lib*/qt6/plugins/kf6/kfileitemaction/bcompare_ext_kde6.so"
+IUSE="caja kde nautilus nemo thunar"
+QA_PREBUILT="
+	usr/lib/beyondcompare/*
+	usr/lib/beyondcompare/ext/*
+	usr/lib*/caja/extensions-2.0/bcompare-ext-caja.so
+	usr/lib*/nautilus/extensions-4/bcompare-ext-nautilus.so
+	usr/lib*/nemo/extensions-3.0/bcompare-ext-nemo.so
+	usr/lib*/qt6/plugins/kf6/kfileitemaction/bcompare_ext_kde6.so
+	usr/lib*/thunarx-3/bcompare-ext-thunarx.so
+"
 
 RESTRICT="bindist mirror strip"
 RDEPEND="
@@ -29,6 +37,11 @@ RDEPEND="
 	virtual/zlib
 	x11-libs/libX11
 	x11-libs/libxkbcommon
+	caja? ( mate-base/caja )
+	kde? ( kde-frameworks/kio:6 )
+	nautilus? ( gnome-base/nautilus )
+	nemo? ( gnome-extra/nemo )
+	thunar? ( xfce-base/thunar )
 "
 BDEPEND="
 	app-arch/xz-utils[extra-filters(+)]
@@ -64,14 +77,54 @@ src_install() {
 	insinto "${BC_LIB}"
 	doins BCompare.mad libcloudstorage.so.22.0
 
+	local ext_files=()
+	use caja && ext_files+=( ext/bcompare-ext-caja.amd64.so )
+	use kde && ext_files+=( ext/bcompare_ext_kde6.amd64.so )
+	use nautilus && ext_files+=(
+		ext/bcompare-ext-nautilus.amd64.so
+		ext/bcompare-ext-nautilus.amd64.so.ext4
+	)
+	use nemo && ext_files+=( ext/bcompare-ext-nemo.amd64.so )
+	use thunar && ext_files+=( ext/bcompare-ext-thunarx-3.amd64.so )
+
+	if [[ ${#ext_files[@]} -gt 0 ]]; then
+		# Skip legacy Qt/i386 plugins that cannot resolve on current Gentoo.
+		insinto "${BC_LIB}/ext"
+		doins "${ext_files[@]}"
+	fi
+
 	# bzip2 compatibility
 	dosym ../../$(get_libdir)/libbz2.so.1 "${BC_LIB}/libbz2.so.1.0"
+
+	if use caja; then
+		local CAJA_PLUGINS="/usr/$(get_libdir)/caja/extensions-2.0"
+		exeinto "${CAJA_PLUGINS}"
+		newexe "ext/bcompare-ext-caja.amd64.so" "bcompare-ext-caja.so"
+	fi
 
 	# KDE 6 Context Menu Plugin (Optional)
 	if use kde; then
 		local KDE6_PLUGINS="/usr/$(get_libdir)/qt6/plugins/kf6/kfileitemaction"
 		exeinto "${KDE6_PLUGINS}"
 		newexe "ext/bcompare_ext_kde6.amd64.so" "bcompare_ext_kde6.so"
+	fi
+
+	if use nautilus; then
+		local NAUTILUS_PLUGINS="/usr/$(get_libdir)/nautilus/extensions-4"
+		exeinto "${NAUTILUS_PLUGINS}"
+		newexe "ext/bcompare-ext-nautilus.amd64.so.ext4" "bcompare-ext-nautilus.so"
+	fi
+
+	if use nemo; then
+		local NEMO_PLUGINS="/usr/$(get_libdir)/nemo/extensions-3.0"
+		exeinto "${NEMO_PLUGINS}"
+		newexe "ext/bcompare-ext-nemo.amd64.so" "bcompare-ext-nemo.so"
+	fi
+
+	if use thunar; then
+		local THUNAR_PLUGINS="/usr/$(get_libdir)/thunarx-3"
+		exeinto "${THUNAR_PLUGINS}"
+		newexe "ext/bcompare-ext-thunarx-3.amd64.so" "bcompare-ext-thunarx.so"
 	fi
 
 	# Wrapper Script
