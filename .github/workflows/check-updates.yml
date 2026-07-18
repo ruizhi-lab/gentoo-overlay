@@ -1,0 +1,57 @@
+name: Check upstream updates
+
+on:
+  schedule:
+    - cron: '37 8 * * 4'  # every Thursday at 08:37 UTC
+  workflow_dispatch:       # allow manual trigger
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for updates
+        id: check
+        run: |
+          chmod +x .github/scripts/check-updates.sh
+          OUTPUT=$(.github/scripts/check-updates.sh 2>&1) || true
+          echo "output<<EOF" >> $GITHUB_OUTPUT
+          echo "$OUTPUT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          JSON=$(.github/scripts/check-updates.sh --json 2>&1) || true
+          echo "json=$JSON" >> $GITHUB_OUTPUT
+
+      - name: Create issue if updates found
+        if: steps.check.outputs.output != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const output = `${{ steps.check.outputs.output }}`;
+            const lines = output.trim().split('\n');
+            const title = `📦 ${lines.length} package(s) have upstream updates`;
+            const body = '## Upstream updates detected\n\n```\n' + output + '\n```\n\n'
+              + 'Please bump the ebuilds accordingly.';
+
+            // Check if an open issue with same title already exists
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: ['updates'],
+            });
+
+            const exists = issues.some(i => i.title.includes('package(s) have upstream updates'));
+            if (!exists) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['updates'],
+              });
+            }

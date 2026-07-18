@@ -1,0 +1,178 @@
+name: Ebuild CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**/*.ebuild'
+      - '**/files/**'
+      - '**/Manifest'
+      - '**/metadata.xml'
+  pull_request:
+    branches: [main]
+    paths:
+      - '**/*.ebuild'
+      - '**/files/**'
+      - '**/Manifest'
+      - '**/metadata.xml'
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        init: [openrc, systemd]
+
+    container:
+      image: ${{ matrix.init == 'systemd' && 'gentoo/stage3:systemd' || 'gentoo/stage3:latest' }}
+      options: --tmpfs /run --tmpfs /tmp
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: repo
+          fetch-depth: 0
+
+      - name: Setup profile (${{ matrix.init }})
+        run: |
+          echo "Current profile:"
+          eselect profile show || true
+          echo ""
+          echo "Available profiles:"
+          eselect profile list 2>/dev/null | grep 'default/linux/amd64' | head -10 || true
+
+      - name: Sync portage tree
+        run: |
+          emerge-webrsync 2>&1 | tail -5 || emerge --sync --quiet 2>&1 | tail -5
+
+      - name: Install required tools
+        run: |
+          emerge -1 --quiet app-arch/unzip 2>&1 || echo "unzip: emerge failed"
+          # ar (binutils) needed for unpacker eclass (.deb extraction)
+          command -v ar >/dev/null 2>&1 || emerge -1 --quiet sys-devel/binutils 2>&1 || true
+          echo ""
+          echo "=== Tool check ==="
+          for tool in unzip tar gzip xz ar; do
+            command -v $tool >/dev/null 2>&1 && echo "$tool: OK" || echo "$tool: MISSING"
+          done
+
+      - name: Register overlay
+        run: |
+          REPO_DIR="${GITHUB_WORKSPACE}/repo"
+          mkdir -p /etc/portage/repos.conf
+          cat > /etc/portage/repos.conf/ruizhi-overlay.conf << EOF
+          [ruizhi-overlay]
+          location = ${REPO_DIR}
+          priority = 50
+          auto-sync = no
+          EOF
+
+      - name: Find changed ebuilds
+        id: changed
+        run: |
+          cd "${GITHUB_WORKSPACE}/repo"
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch origin "${{ github.base_ref }}" --depth=1
+            RANGE="FETCH_HEAD...HEAD"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # Manual trigger: test prebuilt/binary ebuilds only.
+            # Source ebuilds need build deps (go, cmake, qt) not in stage3.
+            EBUILDS=$(
+              for e in $(find . -name '*.ebuild' ! -name '*9999*' | sort); do
+                dir=$(dirname "$e")
+                pkg=$(basename "$dir")
+                # Skip known source-build packages
+                case "$pkg" in
+                  v2ray|Xray|v2rayA|goldendict-ng|qv2ray|qvplugin-*|latte-dock-ng|\
+                  xrdp|xorgxrdp|openslide|libdicom|singleapplication|qnodeeditor|\
+                  v2ray-geoip|v2ray-domain-list-community|snapper-gui)
+                    continue ;;
+                  *) echo "$e" ;;
+                esac
+              done
+            )
+            echo "ebuilds<<EOF" >> $GITHUB_OUTPUT
+            echo "${EBUILDS}" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "Testing binary ebuilds only: ${EBUILDS}"
+            exit 0
+          else
+            RANGE="HEAD~1...HEAD"
+          fi
+
+          EBUILDS=$(git diff --name-only ${RANGE} -- '*.ebuild' 2>/dev/null || true)
+
+          # If no ebuilds directly changed, find ebuilds in changed dirs
+          if [ -z "${EBUILDS}" ]; then
+            DIRS=$(git diff --name-only ${RANGE} 2>/dev/null \
+              | xargs -n1 dirname 2>/dev/null | sort -u || true)
+            for d in ${DIRS}; do
+              for e in "${d}/"*.ebuild; do
+                [ -f "${e}" ] && EBUILDS="${EBUILDS} ${e}"
+              done
+            done
+          fi
+
+          EBUILDS=$(echo "${EBUILDS}" | xargs -n1 2>/dev/null | sort -u)
+          echo "ebuilds<<EOF" >> $GITHUB_OUTPUT
+          echo "${EBUILDS}" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "Found ebuilds: ${EBUILDS}"
+
+      - name: Smoke test (virtual ebuild)
+        run: |
+          echo "=== Testing virtual/v2ray (no distfiles, no compile) ==="
+          ebuild "${GITHUB_WORKSPACE}/repo/virtual/v2ray/v2ray-0.ebuild" clean install || {
+            echo "SMOKE TEST FAILED - check portage environment"
+            exit 1
+          }
+          echo "Smoke test passed!"
+
+      - name: Verify ebuilds (${{ matrix.init }})
+        if: steps.changed.outputs.ebuilds != ''
+        run: |
+          export FEATURES="-sandbox -usersandbox -ipc-sandbox -network-sandbox -pid-sandbox"
+          export PORTAGE_TMPDIR="${GITHUB_WORKSPACE}/tmp"
+          export DISTDIR="${GITHUB_WORKSPACE}/distfiles"
+          export PKGDIR="${GITHUB_WORKSPACE}/packages"
+          mkdir -p "${PORTAGE_TMPDIR}" "${DISTDIR}" "${PKGDIR}"
+
+          FAILED=""
+          PASSED=""
+
+          while IFS= read -r ebuild; do
+            [ -z "${ebuild}" ] && continue
+            ebuild="${GITHUB_WORKSPACE}/repo/${ebuild}"
+            pkg=$(basename "$(dirname "$(dirname "${ebuild}")")")
+
+            echo ""
+            echo "=== ${pkg} ==="
+
+            if ebuild "${ebuild}" clean install; then
+              echo "PASS: ${pkg}"
+              PASSED="${PASSED} ${pkg}"
+            else
+              rc=$?
+              echo "FAIL: ${pkg} (exit: ${rc})"
+              FAILED="${FAILED} ${pkg}"
+            fi
+          done <<< "${{ steps.changed.outputs.ebuilds }}"
+
+          echo ""
+          echo "========================================"
+          echo "Summary (${{ matrix.init }}):"
+          echo "  Passed: $(echo ${PASSED} | wc -w)"
+          echo "  Failed: $(echo ${FAILED} | wc -w)"
+          if [ -n "${FAILED}" ]; then
+            echo "  Failures:${FAILED}"
+          fi
+          echo "========================================"
+
+          # On PR or push, fail if any ebuild failed
+          if [ -n "${FAILED}" ] && [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            echo "CI: changed ebuilds must pass verification"
+            exit 1
+          fi

@@ -1,0 +1,135 @@
+#!/bin/bash
+# Check ruizhi-overlay packages for upstream updates.
+# Only outputs results when a newer version is found.
+# Usage: ./check-updates.sh [--json]
+#
+# Entry format: "category/package|github_repo|version_prefix"
+
+set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+OVERLAY_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
+
+PKGS=(
+  "net-proxy/v2ray|v2fly/v2ray-core|v"
+  "net-proxy/v2ray-bin|v2fly/v2ray-core|v"
+  "net-proxy/v2rayA|v2rayA/v2rayA|v"
+  "dev-libs/v2ray-geoip-bin|v2fly/geoip|"
+  "dev-libs/v2ray-domain-list-community-bin|v2fly/domain-list-community|"
+  "dev-libs/v2ray-rules-dat-bin|Loyalsoldier/v2ray-rules-dat|"
+  "app-text/goldendict-ng|xiaoyifang/goldendict-ng|v"
+  "app-text/quarto-bin|quarto-dev/quarto-cli|v"
+  "kde-misc/latte-dock-ng|skeepbot/Latte-Dock-NG|"
+  "media-fonts/sarasa-gothic|be5invis/Sarasa-Gothic|v"
+  "media-fonts/sarasa-term-sc-nerd|laishulu/Sarasa-Term-SC-Nerd|v"
+  "media-sound/yesplaymusic-bin|qier222/YesPlayMusic|v"
+  "dev-libs/singleapplication|itay-grudev/SingleApplication|v"
+  "media-libs/openslide|openslide/openslide|v"
+  "net-misc/xrdp|neutrinolabs/xrdp|v"
+  "net-misc/xorgxrdp|neutrinolabs/xorgxrdp|v"
+  "net-proxy/v2rayn-bin|2dust/v2rayN|"
+)
+
+# Repos that only use tags (no GitHub releases)
+TAG_ONLY_REPOS=("skeepbot/Latte-Dock-NG")
+
+GH_API="${GITHUB_API_URL:-https://api.github.com}"
+CURL_OPTS="${CURL_OPTS:--s}"
+OUTPUT_JSON="${1:-}"
+[[ "$OUTPUT_JSON" == "--json" ]] && OUTPUT_JSON=true || OUTPUT_JSON=false
+
+get_current_version() {
+  find "${OVERLAY_ROOT}/$1" -name '*.ebuild' ! -name '*9999*' 2>/dev/null \
+    | sed 's/.*-\([0-9][^-]*\)\(-r[0-9]\)\?\.ebuild/\1/' \
+    | sort -V | tail -1
+}
+
+# Get the base version without snapshot suffix (_pYYYYMMDD)
+base_version() {
+  echo "${1%%_p*}"
+}
+
+# True if the version has a git snapshot suffix (ebuild _pYYYYMMDD)
+has_snapshot() {
+  [[ "$1" == *_p[0-9]* ]]
+}
+
+get_latest_stable() {
+  local repo="$1"
+
+  # For tag-only repos, use tags API
+  for t in "${TAG_ONLY_REPOS[@]}"; do
+    [[ "$repo" == "$t" ]] && { get_latest_stable_tag "$repo"; return; }
+  done
+
+  # Use releases API - list releases and pick first non-prerelease, non-draft
+  curl ${CURL_OPTS} "${GH_API}/repos/${repo}/releases?per_page=10" 2>/dev/null \
+    | python3 -c '
+import json,sys
+releases = json.load(sys.stdin)
+for r in releases:
+    if not r.get("prerelease") and not r.get("draft"):
+        print(r["tag_name"])
+        break
+' 2>/dev/null || echo ""
+}
+
+get_latest_stable_tag() {
+  local repo="$1"
+  # Get multiple tags and try to find one that looks like a version
+  curl ${CURL_OPTS} "${GH_API}/repos/${repo}/tags?per_page=20" 2>/dev/null \
+    | python3 -c '
+import json,sys,re
+tags = json.load(sys.stdin)
+for t in tags:
+    name = t["name"].lstrip("v")
+    # Only accept tags that look like release versions (X.Y.Z or date-based)
+    if re.match(r"^\d+(\.\d+)+$", name) or re.match(r"^\d{12,14}$", name):
+        print(t["name"])
+        break
+' 2>/dev/null || echo ""
+}
+
+strip_prefix() {
+  local ver="$1"
+  [[ -n "$2" ]] && ver="${ver#"$2"}"
+  echo "$ver"
+}
+
+updates_found=0
+
+for entry in "${PKGS[@]}"; do
+  IFS='|' read -r pkg repo prefix <<< "$entry"
+
+  current=$(get_current_version "$pkg")
+  [[ -z "$current" ]] && continue
+
+  latest=$(get_latest_stable "$repo")
+  [[ -z "$latest" || "$latest" == "null" ]] && continue
+
+  cur=$(strip_prefix "$current" "$prefix")
+  lat=$(strip_prefix "$latest" "$prefix")
+
+  [[ "$cur" != "$lat" ]] || continue
+
+  # Snapshot check: if current is 2.7.0_p20240625 and latest is v2.7.0,
+  # the snapshot is git HEAD and newer than the release — skip.
+  if has_snapshot "$current"; then
+    cur_base=$(base_version "$cur")
+    [[ "$cur_base" == "$lat" ]] && continue
+  fi
+
+  # Date-based versions (YYYYMMDDHHMMSS)
+  if [[ "$cur" =~ ^[0-9]{12,14}$ ]] && [[ "$lat" =~ ^[0-9]{12,14}$ ]]; then
+    [[ "$lat" -gt "$cur" ]] || continue
+  fi
+
+  updates_found=$((updates_found + 1))
+  echo "UPDATE: ${pkg}: ${current} → ${latest}  (https://github.com/${repo}/releases)"
+done
+
+if [[ $updates_found -gt 0 ]]; then
+  echo ""
+  echo "${updates_found} package(s) have updates."
+fi
+
+exit $updates_found

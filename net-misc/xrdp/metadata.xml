@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<name>Ruizhi Zhong</name>
+		<email>ruizhi.zhong88@gmail.com</email>
+	</maintainer>
+	<use>
+		<flag name="fuse">Enable FUSE support for clipboard file and drive redirection.</flag>
+	</use>
+	<upstream>
+		<remote-id type="github">neutrinolabs/xrdp</remote-id>
+	</upstream>
+</pkgmetadata>

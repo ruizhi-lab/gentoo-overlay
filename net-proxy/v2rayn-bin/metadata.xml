@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<name>Ruizhi Zhong</name>
+		<email>ruizhi.zhong88@gmail.com</email>
+	</maintainer>
+	<upstream>
+		<doc>https://github.com/2dust/v2rayN/wiki</doc>
+		<bugs-to>https://github.com/2dust/v2rayN/issues</bugs-to>
+		<remote-id type="github">2dust/v2rayN</remote-id>
+	</upstream>
+</pkgmetadata>
