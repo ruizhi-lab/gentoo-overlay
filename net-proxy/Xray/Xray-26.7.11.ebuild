@@ -1,11 +1,11 @@
-# Copyright 1999-2026 Gentoo Authors
+# Copyright 2025-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 inherit go-module systemd
 
-DESCRIPTION="Xray, Penetrates Everything. Also the best v2ray-core, with XTLS support"
+DESCRIPTION="Xray, Penetrates Everything. Source build with XTLS support"
 HOMEPAGE="https://xtls.github.io/ https://github.com/XTLS/Xray-core"
 # maintainer generated vendor pack, see gentoo-zh-drafts/Xray-core
 SRC_URI="
@@ -27,6 +27,7 @@ RDEPEND="
 BDEPEND=">=dev-lang/go-1.26.0"
 
 src_compile() {
+	# disable inlining to work around Go compiler issue with Xray-core
 	ego build -o xray -gcflags="all=-l=4" \
 		-ldflags "-X github.com/XTLS/Xray-core/core.build=${PV}" ./main
 }

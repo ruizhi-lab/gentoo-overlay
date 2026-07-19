@@ -4,6 +4,8 @@
 EAPI=8
 
 DESCRIPTION="Virtual for Xray-core"
+HOMEPAGE="https://xtls.github.io/"
+LICENSE="metapackage"
 
 SLOT="0"
 KEYWORDS="~amd64"
