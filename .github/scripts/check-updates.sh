@@ -43,6 +43,9 @@ TAG_ONLY_REPOS=("ruizhi-lab/latte-dock-ng")
 
 GH_API="${GITHUB_API_URL:-https://api.github.com}"
 CURL_OPTS="${CURL_OPTS:--s}"
+if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+  CURL_OPTS="$CURL_OPTS -H \"Authorization: Bearer ${GITHUB_TOKEN}\""
+fi
 OUTPUT_JSON="${1:-}"
 [[ "$OUTPUT_JSON" == "--json" ]] && OUTPUT_JSON=true || OUTPUT_JSON=false
 
@@ -62,6 +65,8 @@ has_snapshot() {
   [[ "$1" == *_p[0-9]* ]]
 }
 
+# Get the latest stable release (non-prerelease, non-draft) from GitHub.
+# For repos that don't use GitHub Releases, use tags API.
 get_latest_stable() {
   local repo="$1"
   local current_ver="$2"
@@ -71,21 +76,31 @@ get_latest_stable() {
     [[ "$repo" == "$t" ]] && { get_latest_stable_tag "$repo"; return; }
   done
 
-  # Use /releases/latest — GitHub's canonical "Latest Release" (not a
-  # prerelease, not a draft). This is the green-badge release on the repo page.
+  # Fetch the releases list and pick the first non-prerelease, non-draft one.
+  # We use the list API (not /latest) because /latest can point to a
+  # prerelease if the maintainer marked it as "Latest Release".
   local latest
-  latest=$(curl ${CURL_OPTS} "${GH_API}/repos/${repo}/releases/latest" 2>/dev/null \
+  latest=$(curl ${CURL_OPTS} "${GH_API}/repos/${repo}/releases?per_page=20" 2>/dev/null \
     | python3 -c '
 import json,sys
 try:
-    r = json.load(sys.stdin)
-    print(r["tag_name"])
+    releases = json.load(sys.stdin)
+    if not isinstance(releases, list):
+        sys.exit(0)
+    for r in releases:
+        if not r.get("prerelease") and not r.get("draft"):
+            print(r["tag_name"])
+            break
 except: pass
 ' 2>/dev/null || echo "")
 
-  # If the latest release is older than (or same as) our current version,
-  # the upstream may not create releases for every tag. Fall back to tags API.
-  if [[ -n "$latest" && -n "$current_ver" ]]; then
+  # If all releases are prerelease/draft, or the repo has no releases at all,
+  # the list will be empty. Fall back to tags API.
+  if [[ -z "$latest" ]]; then
+    latest=$(get_latest_stable_tag "$repo")
+  # If the latest release is older than our current version, upstream may
+  # not create releases for every tag. Fall back to tags API.
+  elif [[ -n "$current_ver" ]]; then
     if version_older_or_same "$latest" "$current_ver"; then
       local tag_latest
       tag_latest=$(get_latest_stable_tag "$repo")
