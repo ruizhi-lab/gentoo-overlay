@@ -20,7 +20,7 @@ RDEPEND="${DEPEND}"
 
 BDEPEND="virtual/pkgconfig"
 PATCHES=(
-	"${FILESDIR}/${P}-qt6.patch"
+	"${FILESDIR}/${PF}-qt6.patch"
 )
 
 src_configure() {
