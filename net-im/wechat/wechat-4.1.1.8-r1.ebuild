@@ -10,7 +10,7 @@ HOMEPAGE="https://linux.weixin.qq.com"
 SRC_URI="https://dldir1v6.qq.com/weixin/Universal/Linux/WeChatLinux_x86_64.deb -> wechat-${PV}_x86_64.deb"
 S=${WORKDIR}
 
-LICENSE="WeChat"
+LICENSE="all-rights-reserved"
 
 SLOT="0"
 KEYWORDS="-* ~amd64"
