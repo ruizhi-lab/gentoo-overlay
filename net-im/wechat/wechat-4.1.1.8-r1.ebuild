@@ -22,7 +22,7 @@ BDEPEND="
 "
 RDEPEND="
 	app-accessibility/at-spi2-core
-	app-crypt/mit-krb5
+	virtual/krb5
 	dev-libs/nss
 	media-libs/libpulse
 	media-libs/mesa
@@ -64,8 +64,8 @@ src_prepare() {
 }
 
 src_install() {
-	dodir /opt/wechat
-	cp -r opt/wechat/. "${D}/opt/wechat/" || die
+	insinto /opt/wechat
+	doins -r opt/wechat/* || die
 
 	if use bwrap; then
 		newbin "${FILESDIR}/bwrap.sh" wechat

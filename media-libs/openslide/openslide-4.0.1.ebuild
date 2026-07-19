@@ -28,3 +28,4 @@ RDEPEND="
 	media-libs/libdicom
 "
 DEPEND="${RDEPEND}"
+BDEPEND="virtual/pkgconfig"

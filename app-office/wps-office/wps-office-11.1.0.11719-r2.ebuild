@@ -29,7 +29,7 @@ BDEPEND="dev-util/patchelf"
 RDEPEND="
 	app-accessibility/at-spi2-core:2
 	app-arch/xz-utils
-	dev-db/sqlite
+	dev-db/sqlite:3
 	dev-libs/expat
 	dev-libs/glib:2
 	dev-libs/libltdl

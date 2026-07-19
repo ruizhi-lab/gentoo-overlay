@@ -58,7 +58,7 @@ src_unpack() {
 }
 
 src_install() {
-	dodir /
+	dodir /opt
 	cd "${D}" || die
 
 	unpacker "${DISTDIR}/${P}_${ARCH}.deb"
