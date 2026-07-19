@@ -26,7 +26,7 @@ PKGS=(
   "net-proxy/qvplugin-trojan-go|Qv2ray/QvPlugin-Trojan-Go|v"
   "app-text/goldendict-ng|xiaoyifang/goldendict-ng|v"
   "app-text/quarto-bin|quarto-dev/quarto-cli|v"
-  "kde-misc/latte-dock-ng|ruizhi-lab/latte-dock-ng|"
+  "kde-misc/latte-dock-ng|ruizhi-lab/latte-dock-ng|v"
   "media-fonts/sarasa-gothic|be5invis/Sarasa-Gothic|v"
   "media-fonts/sarasa-term-sc-nerd|laishulu/Sarasa-Term-SC-Nerd|v"
   "media-sound/yesplaymusic-bin|qier222/YesPlayMusic|v"
@@ -64,22 +64,46 @@ has_snapshot() {
 
 get_latest_stable() {
   local repo="$1"
+  local current_ver="$2"
 
-  # For tag-only repos, use tags API
+  # For tag-only repos, use tags API directly
   for t in "${TAG_ONLY_REPOS[@]}"; do
     [[ "$repo" == "$t" ]] && { get_latest_stable_tag "$repo"; return; }
   done
 
   # Use /releases/latest — GitHub's canonical "Latest Release" (not a
   # prerelease, not a draft). This is the green-badge release on the repo page.
-  curl ${CURL_OPTS} "${GH_API}/repos/${repo}/releases/latest" 2>/dev/null \
+  local latest
+  latest=$(curl ${CURL_OPTS} "${GH_API}/repos/${repo}/releases/latest" 2>/dev/null \
     | python3 -c '
 import json,sys
 try:
     r = json.load(sys.stdin)
     print(r["tag_name"])
 except: pass
-' 2>/dev/null || echo ""
+' 2>/dev/null || echo "")
+
+  # If the latest release is older than (or same as) our current version,
+  # the upstream may not create releases for every tag. Fall back to tags API.
+  if [[ -n "$latest" && -n "$current_ver" ]]; then
+    if version_older_or_same "$latest" "$current_ver"; then
+      local tag_latest
+      tag_latest=$(get_latest_stable_tag "$repo")
+      [[ -n "$tag_latest" ]] && { echo "$tag_latest"; return; }
+    fi
+  fi
+
+  echo "$latest"
+}
+
+# Compare two version strings (after stripping "v" prefix).
+# Returns 0 if $1 <= $2, 1 otherwise.
+version_older_or_same() {
+  local a="${1#v}" b="${2#v}"
+  [[ "$a" == "$b" ]] && return 0
+  local oldest
+  oldest=$(printf '%s\n%s\n' "$a" "$b" | sort -V | head -1)
+  [[ "$oldest" == "$a" ]]
 }
 
 # Only for repos without GitHub Releases. Match stable version tags and filter
@@ -122,7 +146,7 @@ for entry in "${PKGS[@]}"; do
   current=$(get_current_version "$pkg")
   [[ -z "$current" ]] && continue
 
-  latest=$(get_latest_stable "$repo")
+  latest=$(get_latest_stable "$repo" "$current")
   [[ -z "$latest" || "$latest" == "null" ]] && continue
 
   cur=$(strip_prefix "$current" "$prefix")
