@@ -70,31 +70,41 @@ get_latest_stable() {
     [[ "$repo" == "$t" ]] && { get_latest_stable_tag "$repo"; return; }
   done
 
-  # Use releases API - list releases and pick first non-prerelease, non-draft
-  curl ${CURL_OPTS} "${GH_API}/repos/${repo}/releases?per_page=10" 2>/dev/null \
+  # Use /releases/latest — GitHub's canonical "Latest Release" (not a
+  # prerelease, not a draft). This is the green-badge release on the repo page.
+  curl ${CURL_OPTS} "${GH_API}/repos/${repo}/releases/latest" 2>/dev/null \
     | python3 -c '
 import json,sys
-releases = json.load(sys.stdin)
-for r in releases:
-    if not r.get("prerelease") and not r.get("draft"):
-        print(r["tag_name"])
-        break
+try:
+    r = json.load(sys.stdin)
+    print(r["tag_name"])
+except: pass
 ' 2>/dev/null || echo ""
 }
 
+# Only for repos without GitHub Releases. Match stable version tags and filter
+# out rc, beta, alpha, pre-release, test, dev, nightly, and similar prerelease
+# suffixes. Also exclude tags containing "test", "nightly", "snapshot", "canary".
 get_latest_stable_tag() {
   local repo="$1"
-  # Get multiple tags and try to find one that looks like a version
-  curl ${CURL_OPTS} "${GH_API}/repos/${repo}/tags?per_page=20" 2>/dev/null \
+  curl ${CURL_OPTS} "${GH_API}/repos/${repo}/tags?per_page=30" 2>/dev/null \
     | python3 -c '
 import json,sys,re
 tags = json.load(sys.stdin)
+# Suffix patterns that indicate a prerelease or unstable tag
+prerelease_suffix = re.compile(
+    r"[-._]?(rc|pre|alpha|beta|test|dev|nightly|snapshot|canary|preview|insider)"
+    r"\d*$", re.IGNORECASE)
 for t in tags:
     name = t["name"].lstrip("v")
-    # Only accept tags that look like release versions (X.Y.Z or date-based)
-    if re.match(r"^\d+(\.\d+)+$", name) or re.match(r"^\d{12,14}$", name):
-        print(t["name"])
-        break
+    # Must start with a digit and be a version-like or date-based tag
+    if not (re.match(r"^\d+(\.\d+)+$", name) or re.match(r"^\d{12,14}$", name)):
+        continue
+    # Must NOT have a prerelease suffix
+    if prerelease_suffix.search(name):
+        continue
+    print(t["name"])
+    break
 ' 2>/dev/null || echo ""
 }
 
