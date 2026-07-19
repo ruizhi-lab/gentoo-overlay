@@ -13,24 +13,33 @@ PKGS=(
   "net-proxy/v2ray|v2fly/v2ray-core|v"
   "net-proxy/v2ray-bin|v2fly/v2ray-core|v"
   "net-proxy/v2rayA|v2rayA/v2rayA|v"
+  "dev-libs/v2ray-geoip|v2fly/geoip|"
   "dev-libs/v2ray-geoip-bin|v2fly/geoip|"
   "dev-libs/v2ray-domain-list-community-bin|v2fly/domain-list-community|"
   "dev-libs/v2ray-rules-dat-bin|Loyalsoldier/v2ray-rules-dat|"
+  "net-proxy/Xray|XTLS/Xray-core|v"
+  "net-proxy/Xray-bin|XTLS/Xray-core|v"
+  "net-proxy/qv2ray|Qv2ray/Qv2ray|v"
+  "net-proxy/qvplugin-command|Qv2ray/QvPlugin-Command|v"
+  "net-proxy/qvplugin-ss|Qv2ray/QvPlugin-SS|v"
+  "net-proxy/qvplugin-trojan|Qv2ray/QvPlugin-Trojan|v"
+  "net-proxy/qvplugin-trojan-go|Qv2ray/QvPlugin-Trojan-Go|v"
   "app-text/goldendict-ng|xiaoyifang/goldendict-ng|v"
   "app-text/quarto-bin|quarto-dev/quarto-cli|v"
-  "kde-misc/latte-dock-ng|skeepbot/Latte-Dock-NG|"
+  "kde-misc/latte-dock-ng|ruizhi-lab/latte-dock-ng|"
   "media-fonts/sarasa-gothic|be5invis/Sarasa-Gothic|v"
   "media-fonts/sarasa-term-sc-nerd|laishulu/Sarasa-Term-SC-Nerd|v"
   "media-sound/yesplaymusic-bin|qier222/YesPlayMusic|v"
   "dev-libs/singleapplication|itay-grudev/SingleApplication|v"
   "media-libs/openslide|openslide/openslide|v"
+  "media-libs/libdicom|ImagingDataCommons/libdicom|v"
   "net-misc/xrdp|neutrinolabs/xrdp|v"
   "net-misc/xorgxrdp|neutrinolabs/xorgxrdp|v"
   "net-proxy/v2rayn-bin|2dust/v2rayN|"
 )
 
 # Repos that only use tags (no GitHub releases)
-TAG_ONLY_REPOS=("skeepbot/Latte-Dock-NG")
+TAG_ONLY_REPOS=("ruizhi-lab/latte-dock-ng")
 
 GH_API="${GITHUB_API_URL:-https://api.github.com}"
 CURL_OPTS="${CURL_OPTS:--s}"
