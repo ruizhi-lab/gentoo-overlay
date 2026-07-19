@@ -4,6 +4,9 @@
 # Usage: ./check-updates.sh [--json]
 #
 # Entry format: "category/package|github_repo|version_prefix"
+#
+# Uses releases API with prerelease/draft filtering. Falls back to tags API
+# for repos that don't create GitHub Releases or where all releases are prerelease.
 
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -38,9 +41,6 @@ PKGS=(
   "net-proxy/v2rayn-bin|2dust/v2rayN|"
 )
 
-# Repos that only use tags (no GitHub releases)
-TAG_ONLY_REPOS=("ruizhi-lab/latte-dock-ng")
-
 GH_API="${GITHUB_API_URL:-https://api.github.com}"
 CURL_OPTS="${CURL_OPTS:--s}"
 if [[ -n "${GITHUB_TOKEN:-}" ]]; then
@@ -65,22 +65,19 @@ has_snapshot() {
   [[ "$1" == *_p[0-9]* ]]
 }
 
-# Get the latest stable release (non-prerelease, non-draft) from GitHub.
-# For repos that don't use GitHub Releases, use tags API.
+# Get the latest stable version from GitHub.
+# 1. Try releases API — filter out prerelease and draft, pick the first one.
+#    This is authoritative because maintainers set the prerelease checkbox.
+# 2. If no stable release found, or the latest stable release is older than
+#    the current version (upstream stopped creating releases), fall back to
+#    tags API with prerelease-suffix filtering.
 get_latest_stable() {
   local repo="$1"
-  local current_ver="$2"
+  local current_ver="${2:-}"
 
-  # For tag-only repos, use tags API directly
-  for t in "${TAG_ONLY_REPOS[@]}"; do
-    [[ "$repo" == "$t" ]] && { get_latest_stable_tag "$repo"; return; }
-  done
-
-  # Fetch the releases list and pick the first non-prerelease, non-draft one.
-  # We use the list API (not /latest) because /latest can point to a
-  # prerelease if the maintainer marked it as "Latest Release".
+  # Fetch releases list, pick first non-prerelease, non-draft
   local latest
-  latest=$(curl ${CURL_OPTS} "${GH_API}/repos/${repo}/releases?per_page=20" 2>/dev/null \
+  latest=$(curl ${CURL_OPTS} "${GH_API}/repos/${repo}/releases?per_page=30" 2>/dev/null \
     | python3 -c '
 import json,sys
 try:
@@ -94,56 +91,68 @@ try:
 except: pass
 ' 2>/dev/null || echo "")
 
-  # If all releases are prerelease/draft, or the repo has no releases at all,
-  # the list will be empty. Fall back to tags API.
+  # If no stable release at all, fall back to tags
   if [[ -z "$latest" ]]; then
-    latest=$(get_latest_stable_tag "$repo")
-  # If the latest release is older than our current version, upstream may
-  # not create releases for every tag. Fall back to tags API.
-  elif [[ -n "$current_ver" ]]; then
-    if version_older_or_same "$latest" "$current_ver"; then
-      local tag_latest
-      tag_latest=$(get_latest_stable_tag "$repo")
-      [[ -n "$tag_latest" ]] && { echo "$tag_latest"; return; }
+    latest=$(get_latest_tag "$repo")
+    echo "$latest"
+    return
+  fi
+
+  # If latest stable release is older than our current version,
+  # upstream may not create releases for newer tags. Try tags.
+  if [[ -n "$current_ver" ]]; then
+    local rel_ver="${latest#v}"
+    local cur_ver="${current_ver#v}"
+    if [[ "$rel_ver" != "$cur_ver" ]]; then
+      local oldest
+      oldest=$(printf '%s\n%s\n' "$rel_ver" "$cur_ver" | sort -V | head -1)
+      if [[ "$oldest" == "$rel_ver" ]]; then
+        local tag_latest
+        tag_latest=$(get_latest_tag "$repo")
+        [[ -n "$tag_latest" ]] && { echo "$tag_latest"; return; }
+      fi
     fi
   fi
 
   echo "$latest"
 }
 
-# Compare two version strings (after stripping "v" prefix).
-# Returns 0 if $1 <= $2, 1 otherwise.
-version_older_or_same() {
-  local a="${1#v}" b="${2#v}"
-  [[ "$a" == "$b" ]] && return 0
-  local oldest
-  oldest=$(printf '%s\n%s\n' "$a" "$b" | sort -V | head -1)
-  [[ "$oldest" == "$a" ]]
-}
-
-# Only for repos without GitHub Releases. Match stable version tags and filter
-# out rc, beta, alpha, pre-release, test, dev, nightly, and similar prerelease
-# suffixes. Also exclude tags containing "test", "nightly", "snapshot", "canary".
-get_latest_stable_tag() {
+# Fallback for repos without GitHub Releases, or where all releases are
+# prerelease. Fetches up to 100 tags, filters by version pattern, excludes
+# known unstable suffixes (rc, beta, alpha, etc.), and picks the highest.
+get_latest_tag() {
   local repo="$1"
-  curl ${CURL_OPTS} "${GH_API}/repos/${repo}/tags?per_page=30" 2>/dev/null \
+  curl ${CURL_OPTS} "${GH_API}/repos/${repo}/tags?per_page=100" 2>/dev/null \
     | python3 -c '
 import json,sys,re
 tags = json.load(sys.stdin)
-# Suffix patterns that indicate a prerelease or unstable tag
-prerelease_suffix = re.compile(
-    r"[-._]?(rc|pre|alpha|beta|test|dev|nightly|snapshot|canary|preview|insider)"
+if not isinstance(tags, list):
+    sys.exit(0)
+
+prerelease_word = re.compile(
+    r"(?:^|[._+-])(rc|pre|alpha|beta|test|dev|nightly|snapshot|canary|preview"
+    r"|insider|prerelease|unstable|experimental|wip|draft|early|next)"
     r"\d*$", re.IGNORECASE)
+
+stable = []
 for t in tags:
-    name = t["name"].lstrip("v")
-    # Must start with a digit and be a version-like or date-based tag
-    if not (re.match(r"^\d+(\.\d+)+$", name) or re.match(r"^\d{12,14}$", name)):
+    name = t["name"]
+    stripped = name.lstrip("v")
+    if not (re.match(r"^\d+(\.\d+)+$", stripped) or re.match(r"^\d{12,14}$", stripped)):
         continue
-    # Must NOT have a prerelease suffix
-    if prerelease_suffix.search(name):
+    if prerelease_word.search(stripped):
         continue
-    print(t["name"])
-    break
+    stable.append(stripped)
+
+if stable:
+    def sort_key(v):
+        parts = v.split(".")
+        try:
+            return (0, tuple(int(p) for p in parts))
+        except ValueError:
+            return (1, int(v))
+    stable.sort(key=sort_key)
+    print(stable[-1])
 ' 2>/dev/null || echo ""
 }
 
@@ -182,7 +191,7 @@ for entry in "${PKGS[@]}"; do
   fi
 
   updates_found=$((updates_found + 1))
-  echo "UPDATE: ${pkg}: ${current} → ${latest}  (https://github.com/${repo}/releases)"
+  echo "UPDATE: ${pkg}: ${current} → ${latest}  (https://github.com/${repo}/tags)"
 done
 
 if [[ $updates_found -gt 0 ]]; then
