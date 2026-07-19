@@ -14,7 +14,7 @@ SRC_URI="
 
 LICENSE="Bcompare"
 SLOT="0"
-KEYWORDS="~amd64"
+KEYWORDS="-* ~amd64"
 IUSE="caja kde nautilus nemo thunar"
 QA_PREBUILT="
 	usr/lib/beyondcompare/*

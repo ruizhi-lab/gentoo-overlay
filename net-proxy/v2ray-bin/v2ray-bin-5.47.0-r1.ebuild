@@ -32,6 +32,7 @@ RDEPEND="
 	app-alternatives/v2ray-geosite
 "
 BDEPEND="app-arch/unzip"
+RESTRICT="strip mirror"
 QA_PREBUILT="
 	/usr/bin/v2ray
 "

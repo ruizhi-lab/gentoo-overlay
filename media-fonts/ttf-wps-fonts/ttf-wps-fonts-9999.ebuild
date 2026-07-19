@@ -11,6 +11,8 @@ EGIT_REPO_URI="https://github.com/dv-anomaly/ttf-wps-fonts.git"
 
 LICENSE="all-rights-reserved"
 SLOT="0"
+KEYWORDS=""
+PROPERTIES="live"
 
 FONT_PN="wps-fonts"
 FONT_SUFFIX="ttf TTF"

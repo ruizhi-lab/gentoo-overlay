@@ -11,6 +11,7 @@ S="${WORKDIR}"
 
 LICENSE="CC-BY-SA-4.0"
 SLOT="0"
+RDEPEND="!dev-libs/v2ray-geoip"
 KEYWORDS="~amd64"
 
 src_install() {

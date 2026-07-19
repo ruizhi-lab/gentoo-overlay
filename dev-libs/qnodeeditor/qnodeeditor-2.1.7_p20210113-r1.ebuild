@@ -18,6 +18,7 @@ KEYWORDS="~amd64"
 DEPEND="dev-qt/qtbase:6[widgets,gui]"
 RDEPEND="${DEPEND}"
 
+BDEPEND="virtual/pkgconfig"
 PATCHES=(
 	"${FILESDIR}/${P}-qt6.patch"
 )

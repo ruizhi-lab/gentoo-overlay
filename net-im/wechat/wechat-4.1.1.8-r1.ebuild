@@ -1,4 +1,4 @@
-# Copyright 1999-2026 Gentoo Authors
+# Copyright 2023-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -10,7 +10,7 @@ HOMEPAGE="https://linux.weixin.qq.com"
 SRC_URI="https://dldir1v6.qq.com/weixin/Universal/Linux/WeChatLinux_x86_64.deb -> wechat-${PV}_x86_64.deb"
 S=${WORKDIR}
 
-LICENSE="all-rights-reserved"
+LICENSE="WeChat"
 
 SLOT="0"
 KEYWORDS="-* ~amd64"

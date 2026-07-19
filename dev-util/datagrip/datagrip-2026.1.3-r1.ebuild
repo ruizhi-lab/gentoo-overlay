@@ -14,7 +14,7 @@ S="${WORKDIR}/DataGrip-${PV}"
 LICENSE="|| ( JetBrains-business JetBrains-classroom JetBrains-educational JetBrains-individual ) Apache-2.0 BSD BSD-2 CC0-1.0 CC-BY-2.5 CC-BY-3.0 CC-BY-4.0 CPL-1.0 CDDL CDDL-1.1 EPL-1.0 EPL-2.0 GPL-2 GPL-2-with-classpath-exception ISC JDOM LGPL-2.1 LGPL-3 MIT MPL-1.1 MPL-2.0 OFL-1.1 PYTHON Unicode-DFS-2016 Unlicense UPL-1.0 ZLIB"
 
 SLOT="0"
-KEYWORDS="~amd64"
+KEYWORDS="-* ~amd64"
 IUSE="wayland"
 RESTRICT="bindist mirror splitdebug"
 QA_PREBUILT="opt/${PN}/*"

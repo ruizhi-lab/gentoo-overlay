@@ -11,7 +11,9 @@ ALTERNATIVES=(
 inherit app-alternatives
 
 DESCRIPTION="symlink for v2ray-geosite"
+HOMEPAGE="https://wiki.gentoo.org/wiki/Project:Base/Alternatives"
 LICENSE="GPL-2"
+SLOT="0"
 KEYWORDS="~amd64"
 
 src_install() {

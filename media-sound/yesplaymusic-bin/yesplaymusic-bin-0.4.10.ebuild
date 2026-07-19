@@ -1,4 +1,4 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 2023-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -14,7 +14,7 @@ S="${WORKDIR}"
 
 LICENSE="MIT"
 SLOT="0"
-KEYWORDS="~amd64"
+KEYWORDS="-* ~amd64"
 
 RESTRICT="mirror strip"
 
@@ -51,5 +51,5 @@ src_install(){
 		doicon -s ${si} usr/share/icons/hicolor/${si}x${si}/apps/${PN%-bin}.png
 	done
 	domenu "${FILESDIR}/${PN%-bin}.desktop"
-	fperms 0755 "/opt/YesPlayMusic/yesplaymusic"
+	chmod 0755 "/opt/YesPlayMusic/yesplaymusic"
 }

@@ -20,6 +20,7 @@ KEYWORDS="-* ~amd64"
 IUSE="bwrap system-fdk-aac system-libssh2 system-openh264 system-zlib gnome"
 
 RESTRICT="strip mirror"
+QA_PREBUILT="*"
 
 RDEPEND="
 	app-accessibility/at-spi2-core:2
@@ -63,7 +64,7 @@ src_install() {
 
 	unpacker "${DISTDIR}/${P}_${ARCH}.deb"
 
-	rm -rv "${D}/usr/share/doc" || die
+	rm -r "${D}/usr/share/doc" || die
 
 	if use system-fdk-aac; then
 		rm -v "${D}/opt/QQ/resources/app/avsdk/libfdk-aac.so" || die

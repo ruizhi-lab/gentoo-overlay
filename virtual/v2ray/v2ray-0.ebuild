@@ -4,6 +4,8 @@
 EAPI=8
 
 DESCRIPTION="Virtual for v2ray-core"
+HOMEPAGE="https://www.v2fly.org/"
+LICENSE="metapackage"
 
 SLOT="0"
 KEYWORDS="~amd64"

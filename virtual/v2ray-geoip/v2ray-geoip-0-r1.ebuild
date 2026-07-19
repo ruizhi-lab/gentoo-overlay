@@ -4,6 +4,8 @@
 EAPI=8
 
 DESCRIPTION="Virtual for v2ray-geoip"
+HOMEPAGE="https://github.com/v2fly/geoip"
+LICENSE="metapackage"
 
 SLOT="0"
 KEYWORDS="~amd64"

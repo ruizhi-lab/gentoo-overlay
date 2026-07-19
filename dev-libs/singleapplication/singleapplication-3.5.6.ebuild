@@ -17,7 +17,7 @@ IUSE="doc"
 
 DEPEND="dev-qt/qtbase:6[network]"
 RDEPEND="${DEPEND}"
-BDEPEND="doc? ( app-text/doxygen )"
+BDEPEND="virtual/pkgconfig doc? ( app-text/doxygen )"
 
 PATCHES=(
 	# https://github.com/itay-grudev/SingleApplication/issues/190

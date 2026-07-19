@@ -9,6 +9,7 @@
 		<remote-id type="github">xiaoyifang/goldendict-ng</remote-id>
 	</upstream>
 	<use>
+		<flag name="ffmpeg">Enable FFmpeg-based media playback support</flag>
 		<flag name="epwing">Enable EPWING dictionary support</flag>
 		<flag name="zim">Enable ZIM archive support</flag>
 	</use>

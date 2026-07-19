@@ -5,6 +5,9 @@
 		<email>dev@wangxianggang.com</email>
 		<name>Xianggang Wang</name>
 	</maintainer>
+	<upstream>
+		<remote-id type="generic">wechat-linux</remote-id>
+	</upstream>
 	<use>
 		<flag name="bwrap">Use <pkg>sys-apps/bubblewrap</pkg> to reduce filesystem exposure and limit privacy leakage.</flag>
 	</use>

@@ -21,6 +21,7 @@ RDEPEND="
 	app-alternatives/v2ray-geosite
 "
 BDEPEND="app-arch/unzip"
+RESTRICT="strip mirror"
 QA_PREBUILT="/usr/bin/xray"
 
 src_install() {

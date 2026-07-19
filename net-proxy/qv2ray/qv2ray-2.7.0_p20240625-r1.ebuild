@@ -5,7 +5,7 @@ EAPI=8
 
 inherit cmake xdg flag-o-matic
 
-DESCRIPTION="Qt GUI fontend of v2ray"
+DESCRIPTION="Qt GUI frontend for V2Ray"
 HOMEPAGE="https://github.com/Qv2ray/Qv2ray"
 
 GIT_COMMIT="d5c5aeb366e2fbe9c9243648af36b0d11da14920"

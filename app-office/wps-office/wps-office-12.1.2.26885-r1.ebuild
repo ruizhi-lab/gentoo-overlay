@@ -14,7 +14,7 @@ S="${WORKDIR}"
 
 LICENSE="WPS-EULA"
 SLOT="0"
-KEYWORDS="~amd64"
+KEYWORDS="-* ~amd64"
 IUSE="systemd"
 
 RESTRICT="strip mirror bindist" # mirror as explained at bug #547372
