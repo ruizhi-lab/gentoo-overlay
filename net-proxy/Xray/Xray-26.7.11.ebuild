@@ -7,10 +7,9 @@ inherit go-module systemd
 
 DESCRIPTION="Xray, Penetrates Everything. Source build with XTLS support"
 HOMEPAGE="https://xtls.github.io/ https://github.com/XTLS/Xray-core"
-# maintainer generated vendor pack, see gentoo-zh-drafts/Xray-core
 SRC_URI="
 	https://github.com/XTLS/Xray-core/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz
-	https://github.com/gentoo-zh-drafts/Xray-core/releases/download/v${PV}/Xray-core-${PV}-vendor.tar.xz
+	https://github.com/ruizhi-lab/gentoo-overlay/releases/download/${P}/Xray-core-${PV}-vendor.tar.xz
 "
 
 S="${WORKDIR}/${PN}-core-${PV}"
