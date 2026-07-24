@@ -4,9 +4,10 @@
 # Usage: ./check-updates.sh [--json]
 #
 # Entry format: "category/package|source|version_prefix|type"
-#   type=github:  source is GitHub repo (e.g. "v2fly/v2ray-core")
+#   type=github:    source is GitHub repo (e.g. "v2fly/v2ray-core")
 #   type=jetbrains: source is JetBrains product code (e.g. "DG")
-#   type=scooter:  source is unused; scrapes scootersoftware.com homepage
+#   type=scooter:   source is unused; scrapes scootersoftware.com kb/linux_install
+#   type=aur:       source is AUR package name (e.g. "wps-office-cn")
 
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -26,6 +27,7 @@ PKGS=(
   "net-proxy/v2rayn-bin|2dust/v2rayN||github"
   "dev-util/datagrip|DG||jetbrains"
   "app-misc/bcompare|bcompare||scooter"
+  "app-office/wps-office|wps-office-cn||aur"
 )
 
 GH_API="${GITHUB_API_URL:-https://api.github.com}"
@@ -173,6 +175,26 @@ get_scooter_latest() {
     | sort -Vu | tail -1 || echo ""
 }
 
+# Get latest version from Arch Linux AUR.
+# Arg: AUR package name (e.g., "wps-office-cn").
+# Strips AUR pkgrel suffix (-1, -2, etc.) for clean version comparison.
+get_aur_latest() {
+  local pkgname="$1"
+  curl ${CURL_OPTS} "https://aur.archlinux.org/rpc/v5/info/${pkgname}" 2>/dev/null \
+    | python3 -c '
+import json,sys
+try:
+    data = json.load(sys.stdin)
+    results = data.get("results", [])
+    if results:
+        ver = results[0]["Version"]
+        # Strip AUR pkgrel (e.g., "12.1.2.26885-1" -> "12.1.2.26885")
+        ver = ver.rsplit("-", 1)[0]
+        print(ver)
+except: pass
+' 2>/dev/null || echo ""
+}
+
 updates_found=0
 
 for entry in "${PKGS[@]}"; do
@@ -188,6 +210,10 @@ for entry in "${PKGS[@]}"; do
       ;;
     scooter)
       latest=$(get_scooter_latest)
+      [[ -z "$latest" ]] && continue
+      ;;
+    aur)
+      latest=$(get_aur_latest "$repo")
       [[ -z "$latest" ]] && continue
       ;;
     *)
@@ -220,6 +246,9 @@ for entry in "${PKGS[@]}"; do
       ;;
     scooter)
       echo "UPDATE: ${pkg}: ${current} → ${latest}  (https://www.scootersoftware.com/download.php)"
+      ;;
+    aur)
+      echo "UPDATE: ${pkg}: ${current} → ${latest}  (https://aur.archlinux.org/packages/${repo})"
       ;;
     *)
       echo "UPDATE: ${pkg}: ${current} → ${latest}  (https://github.com/${repo}/tags)"
