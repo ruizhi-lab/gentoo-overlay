@@ -27,6 +27,10 @@ PKGS=(
   "net-proxy/v2rayn-bin|2dust/v2rayN||github"
   "media-fonts/harmonyos-sans|ttf-harmonyos-sans||aur"
   "x11-misc/flatpak-xdg-utils|flatpak/flatpak-xdg-utils||github"
+  "net-im/tencent-qq|net-im/tencent-qq||gentoozh"
+  "net-im/wechat|net-im/wechat||gentoozh"
+  "net-misc/baidunetdisk|net-misc/baidunetdisk||gentoozh"
+  "x11-misc/snapd-xdg-open|x11-misc/snapd-xdg-open||gentoozh"
   "dev-util/datagrip|DG||jetbrains"
   "app-misc/bcompare|bcompare||scooter"
   "app-office/wps-office|wps-office-cn||aur"
@@ -197,6 +201,39 @@ except: pass
 ' 2>/dev/null || echo ""
 }
 
+# Get latest version from gentoo-zh overlay.
+# Arg: "category/package" relative path (e.g., "net-im/wechat").
+# Uses GitHub API to list the package directory in gentoo-zh/overlay.
+get_gentoozh_latest() {
+  local pkg_path="$1"
+  curl ${CURL_OPTS} "https://api.github.com/repos/gentoo-zh/overlay/contents/${pkg_path}" 2>/dev/null \
+    | python3 -c '
+import json,sys,re
+try:
+    data = json.load(sys.stdin)
+    if not isinstance(data, list):
+        sys.exit(0)
+    versions = []
+    for item in data:
+        name = item["name"]
+        # Match ebuild filenames: pkg-version.ebuild (skip 9999)
+        m = re.match(r".+-([0-9][^-]*)\.ebuild$", name)
+        if m:
+            v = m.group(1).rstrip("-r1").rstrip("-r2").rstrip("-r3")
+            versions.append(v)
+    if versions:
+        def sort_key(v):
+            parts = re.split(r"[._]", v)
+            try:
+                return (0, tuple(int(p) for p in parts if p))
+            except ValueError:
+                return (1, 0)
+        versions.sort(key=sort_key)
+        print(versions[-1])
+except: pass
+' 2>/dev/null || echo ""
+}
+
 updates_found=0
 
 for entry in "${PKGS[@]}"; do
@@ -216,6 +253,10 @@ for entry in "${PKGS[@]}"; do
       ;;
     aur)
       latest=$(get_aur_latest "$repo")
+      [[ -z "$latest" ]] && continue
+      ;;
+    gentoozh)
+      latest=$(get_gentoozh_latest "$repo")
       [[ -z "$latest" ]] && continue
       ;;
     *)
@@ -251,6 +292,9 @@ for entry in "${PKGS[@]}"; do
       ;;
     aur)
       echo "UPDATE: ${pkg}: ${current} → ${latest}  (https://aur.archlinux.org/packages/${repo})"
+      ;;
+    gentoozh)
+      echo "UPDATE: ${pkg}: ${current} → ${latest}  (https://github.com/gentoo-zh/overlay/tree/master/${repo})"
       ;;
     *)
       echo "UPDATE: ${pkg}: ${current} → ${latest}  (https://github.com/${repo}/tags)"
