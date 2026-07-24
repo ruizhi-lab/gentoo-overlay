@@ -1,5 +1,3 @@
-app-alternatives
-app-backup
 app-misc
 app-office
 app-text
@@ -12,5 +10,4 @@ media-sound
 net-im
 net-misc
 net-proxy
-virtual
 x11-misc
