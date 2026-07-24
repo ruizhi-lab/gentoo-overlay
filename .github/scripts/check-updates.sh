@@ -25,6 +25,8 @@ PKGS=(
   "net-misc/xrdp|neutrinolabs/xrdp|v|github"
   "net-misc/xorgxrdp|neutrinolabs/xorgxrdp|v|github"
   "net-proxy/v2rayn-bin|2dust/v2rayN||github"
+  "media-fonts/harmonyos-sans|ttf-harmonyos-sans||aur"
+  "x11-misc/flatpak-xdg-utils|flatpak/flatpak-xdg-utils||github"
   "dev-util/datagrip|DG||jetbrains"
   "app-misc/bcompare|bcompare||scooter"
   "app-office/wps-office|wps-office-cn||aur"
