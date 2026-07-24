@@ -180,11 +180,12 @@ except: pass
 ' "$code" 2>/dev/null || echo ""
 }
 
-# Get latest version from Scooter Software homepage.
-# Parses "Version X.Y.Z" text. Returns only major.minor.patch.
+# Get latest version from Scooter Software Linux install page.
+# Parses download links like bcompare-X.Y.Z.BUILD (full version with build number).
 get_scooter_latest() {
-  curl ${CURL_OPTS} "https://www.scootersoftware.com/" 2>/dev/null \
-    | grep -oP 'Version \K[0-9]+\.[0-9]+\.[0-9]+' 2>/dev/null | head -1 || echo ""
+  curl ${CURL_OPTS} "https://www.scootersoftware.com/kb/linux_install" 2>/dev/null \
+    | grep -oP 'bcompare-\K[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' 2>/dev/null \
+    | sort -Vu | tail -1 || echo ""
 }
 
 updates_found=0
