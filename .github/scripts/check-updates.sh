@@ -3,42 +3,44 @@
 # Only outputs results when a newer version is found.
 # Usage: ./check-updates.sh [--json]
 #
-# Entry format: "category/package|github_repo|version_prefix"
-#
-# Uses releases API with prerelease/draft filtering. Falls back to tags API
-# for repos that don't create GitHub Releases or where all releases are prerelease.
+# Entry format: "category/package|source|version_prefix|type"
+#   type=github:  source is GitHub repo (e.g. "v2fly/v2ray-core")
+#   type=jetbrains: source is JetBrains product code (e.g. "DG")
+#   type=scooter:  source is unused; scrapes scootersoftware.com homepage
 
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 OVERLAY_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
 PKGS=(
-  "net-proxy/v2ray|v2fly/v2ray-core|v"
-  "net-proxy/v2ray-bin|v2fly/v2ray-core|v"
-  "net-proxy/v2rayA|v2rayA/v2rayA|v"
-  "dev-libs/v2ray-geoip|v2fly/geoip|"
-  "dev-libs/v2ray-geoip-bin|v2fly/geoip|"
-  "dev-libs/v2ray-domain-list-community-bin|v2fly/domain-list-community|"
-  "dev-libs/v2ray-rules-dat-bin|Loyalsoldier/v2ray-rules-dat|"
-  "net-proxy/Xray|XTLS/Xray-core|v"
-  "net-proxy/Xray-bin|XTLS/Xray-core|v"
-  "net-proxy/qv2ray|Qv2ray/Qv2ray|v"
-  "net-proxy/qvplugin-command|Qv2ray/QvPlugin-Command|v"
-  "net-proxy/qvplugin-ss|Qv2ray/QvPlugin-SS|v"
-  "net-proxy/qvplugin-trojan|Qv2ray/QvPlugin-Trojan|v"
-  "net-proxy/qvplugin-trojan-go|Qv2ray/QvPlugin-Trojan-Go|v"
-  "app-text/goldendict-ng|xiaoyifang/goldendict-ng|v"
-  "app-text/quarto-bin|quarto-dev/quarto-cli|v"
-  "kde-misc/latte-dock-ng|ruizhi-lab/latte-dock-ng|v"
-  "media-fonts/sarasa-gothic|be5invis/Sarasa-Gothic|v"
-  "media-fonts/sarasa-term-sc-nerd|laishulu/Sarasa-Term-SC-Nerd|v"
-  "media-sound/yesplaymusic-bin|qier222/YesPlayMusic|v"
-  "dev-libs/singleapplication|itay-grudev/SingleApplication|v"
-  "media-libs/openslide|openslide/openslide|v"
-  "media-libs/libdicom|ImagingDataCommons/libdicom|v"
-  "net-misc/xrdp|neutrinolabs/xrdp|v"
-  "net-misc/xorgxrdp|neutrinolabs/xorgxrdp|v"
-  "net-proxy/v2rayn-bin|2dust/v2rayN|"
+  "net-proxy/v2ray|v2fly/v2ray-core|v|github"
+  "net-proxy/v2ray-bin|v2fly/v2ray-core|v|github"
+  "net-proxy/v2rayA|v2rayA/v2rayA|v|github"
+  "dev-libs/v2ray-geoip|v2fly/geoip||github"
+  "dev-libs/v2ray-geoip-bin|v2fly/geoip||github"
+  "dev-libs/v2ray-domain-list-community-bin|v2fly/domain-list-community||github"
+  "dev-libs/v2ray-rules-dat-bin|Loyalsoldier/v2ray-rules-dat||github"
+  "net-proxy/Xray|XTLS/Xray-core|v|github"
+  "net-proxy/Xray-bin|XTLS/Xray-core|v|github"
+  "net-proxy/qv2ray|Qv2ray/Qv2ray|v|github"
+  "net-proxy/qvplugin-command|Qv2ray/QvPlugin-Command|v|github"
+  "net-proxy/qvplugin-ss|Qv2ray/QvPlugin-SS|v|github"
+  "net-proxy/qvplugin-trojan|Qv2ray/QvPlugin-Trojan|v|github"
+  "net-proxy/qvplugin-trojan-go|Qv2ray/QvPlugin-Trojan-Go|v|github"
+  "app-text/goldendict-ng|xiaoyifang/goldendict-ng|v|github"
+  "app-text/quarto-bin|quarto-dev/quarto-cli|v|github"
+  "kde-misc/latte-dock-ng|ruizhi-lab/latte-dock-ng|v|github"
+  "media-fonts/sarasa-gothic|be5invis/Sarasa-Gothic|v|github"
+  "media-fonts/sarasa-term-sc-nerd|laishulu/Sarasa-Term-SC-Nerd|v|github"
+  "media-sound/yesplaymusic-bin|qier222/YesPlayMusic|v|github"
+  "dev-libs/singleapplication|itay-grudev/SingleApplication|v|github"
+  "media-libs/openslide|openslide/openslide|v|github"
+  "media-libs/libdicom|ImagingDataCommons/libdicom|v|github"
+  "net-misc/xrdp|neutrinolabs/xrdp|v|github"
+  "net-misc/xorgxrdp|neutrinolabs/xorgxrdp|v|github"
+  "net-proxy/v2rayn-bin|2dust/v2rayN||github"
+  "dev-util/datagrip|DG||jetbrains"
+  "app-misc/bcompare|bcompare||scooter"
 )
 
 GH_API="${GITHUB_API_URL:-https://api.github.com}"
@@ -162,16 +164,51 @@ strip_prefix() {
   echo "$ver"
 }
 
+# Get latest version from JetBrains product API.
+# Arg: product code (e.g., "DG" for DataGrip).
+get_jetbrains_latest() {
+  local code="$1"
+  curl ${CURL_OPTS} "https://data.services.jetbrains.com/products/releases?code=${code}&latest=true&type=release" 2>/dev/null \
+    | python3 -c '
+import json,sys
+try:
+    data = json.load(sys.stdin)
+    releases = data.get(sys.argv[1], [])
+    if releases:
+        print(releases[0]["version"])
+except: pass
+' "$code" 2>/dev/null || echo ""
+}
+
+# Get latest version from Scooter Software homepage.
+# Parses "Version X.Y.Z" text. Returns only major.minor.patch.
+get_scooter_latest() {
+  curl ${CURL_OPTS} "https://www.scootersoftware.com/" 2>/dev/null \
+    | grep -oP 'Version \K[0-9]+\.[0-9]+\.[0-9]+' 2>/dev/null | head -1 || echo ""
+}
+
 updates_found=0
 
 for entry in "${PKGS[@]}"; do
-  IFS='|' read -r pkg repo prefix <<< "$entry"
+  IFS='|' read -r pkg repo prefix type <<< "$entry"
 
   current=$(get_current_version "$pkg")
   [[ -z "$current" ]] && continue
 
-  latest=$(get_latest_stable "$repo" "$current")
-  [[ -z "$latest" || "$latest" == "null" ]] && continue
+  case "${type:-github}" in
+    jetbrains)
+      latest=$(get_jetbrains_latest "$repo")
+      [[ -z "$latest" || "$latest" == "null" ]] && continue
+      ;;
+    scooter)
+      latest=$(get_scooter_latest)
+      [[ -z "$latest" ]] && continue
+      ;;
+    *)
+      latest=$(get_latest_stable "$repo" "$current")
+      [[ -z "$latest" || "$latest" == "null" ]] && continue
+      ;;
+  esac
 
   cur=$(strip_prefix "$current" "$prefix")
   lat=$(strip_prefix "$latest" "$prefix")
@@ -191,7 +228,17 @@ for entry in "${PKGS[@]}"; do
   fi
 
   updates_found=$((updates_found + 1))
-  echo "UPDATE: ${pkg}: ${current} → ${latest}  (https://github.com/${repo}/tags)"
+  case "${type:-github}" in
+    jetbrains)
+      echo "UPDATE: ${pkg}: ${current} → ${latest}  (https://www.jetbrains.com/${pkg##*/}/download/)"
+      ;;
+    scooter)
+      echo "UPDATE: ${pkg}: ${current} → ${latest}  (https://www.scootersoftware.com/download.php)"
+      ;;
+    *)
+      echo "UPDATE: ${pkg}: ${current} → ${latest}  (https://github.com/${repo}/tags)"
+      ;;
+  esac
 done
 
 if [[ $updates_found -gt 0 ]]; then
