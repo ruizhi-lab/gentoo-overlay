@@ -20,8 +20,6 @@ PKGS=(
   "media-fonts/sarasa-gothic|be5invis/Sarasa-Gothic|v|github"
   "media-fonts/sarasa-term-sc-nerd|laishulu/Sarasa-Term-SC-Nerd|v|github"
   "media-sound/yesplaymusic-bin|qier222/YesPlayMusic|v|github"
-  "media-libs/openslide|openslide/openslide|v|github"
-  "media-libs/libdicom|ImagingDataCommons/libdicom|v|github"
   "net-misc/xrdp|neutrinolabs/xrdp|v|github"
   "net-misc/xorgxrdp|neutrinolabs/xorgxrdp|v|github"
   "net-proxy/v2rayn-bin|2dust/v2rayN||github"
