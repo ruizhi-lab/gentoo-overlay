@@ -7,6 +7,8 @@
 	</maintainer>
 	<use>
 		<flag name="systemd">Use systemd's D-Bus library instead of the bundled libdbus</flag>
+		<flag name="fcitx">Set IME environment variables for fcitx in desktop files.</flag>
+		<flag name="ibus">Set IME environment variables for ibus in desktop files.</flag>
 	</use>
 	<upstream>
 		<doc>https://www.wps.cn/product/wpslinux/</doc>

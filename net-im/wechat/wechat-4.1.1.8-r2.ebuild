@@ -14,7 +14,9 @@ LICENSE="all-rights-reserved"
 
 SLOT="0"
 KEYWORDS="-* ~amd64"
-IUSE="bwrap"
+IUSE="bwrap +fcitx ibus"
+
+REQUIRED_USE="^^ ( fcitx ibus )"
 
 RESTRICT="strip mirror bindist"
 BDEPEND="
@@ -67,6 +69,14 @@ src_install() {
 	insinto /opt/wechat
 	doins -r opt/wechat/* || die
 
+	# doins doesn't set +x on executables
+	exeinto /opt/wechat
+	doexe opt/wechat/wechat opt/wechat/wxutility opt/wechat/wxplayer \
+		opt/wechat/wxocr opt/wechat/crashpad_handler
+	exeinto /opt/wechat/RadiumWMPF/runtime
+	doexe opt/wechat/RadiumWMPF/runtime/WeChatAppEx \
+		opt/wechat/RadiumWMPF/runtime/crashpad_handler
+
 	if use bwrap; then
 		newbin "${FILESDIR}/bwrap.sh" wechat
 		exeinto /opt/wechat
@@ -75,16 +85,17 @@ src_install() {
 		newbin "${FILESDIR}/wechat.sh" wechat
 	fi
 
-	local exec_envs=(
-		"QT_AUTO_SCREEN_SCALE_FACTOR=1"
-		"\"QT_QPA_PLATFORM=wayland;xcb\""
-		"\"QT_IM_MODULE=${QT_IM_MODULE:-fcitx}\""
-	)
+	local ime_envs=""
+	if use fcitx; then
+		ime_envs=" XMODIFIERS=\"@im=fcitx\" GTK_IM_MODULE=\"fcitx\" QT_IM_MODULE=\"${QT_IM_MODULE:-fcitx}\""
+	elif use ibus; then
+		ime_envs=" XMODIFIERS=\"@im=ibus\" GTK_IM_MODULE=\"ibus\" QT_IM_MODULE=\"ibus\""
+	fi
 
 	sed -i \
 		-e "s|^Icon=.*|Icon=wechat|" \
 		-e "s|^Categories=.*|Categories=Network;InstantMessaging;Chat;|" \
-		-e "s|^Exec=.*|Exec=env ${exec_envs[*]} /usr/bin/wechat %U|" \
+		-e "s|^Exec=.*|Exec=env QT_AUTO_SCREEN_SCALE_FACTOR=1 QT_QPA_PLATFORM=\"wayland;xcb\"${ime_envs} /usr/bin/wechat %U|" \
 		usr/share/applications/wechat.desktop || die
 	domenu usr/share/applications/wechat.desktop
 
@@ -95,9 +106,8 @@ src_install() {
 
 pkg_postinst() {
 	xdg_pkg_postinst
-	elog "fcitx input under Wayland: desktop file defaults to QT_IM_MODULE=fcitx."
-	elog "For ibus or other IME, copy the desktop file to ~/.local/share/applications/"
-	elog "and change QT_IM_MODULE accordingly."
+	elog "Input method defaults to fcitx. Use USE=-fcitx ibus for ibus,"
+	elog "or USE=-fcitx to disable IME variables entirely."
 	if use bwrap; then
 		elog "Enabled Bubblewrap support."
 		elog "WeChat can only access its own sandbox home and XDG Downloads directory by default."

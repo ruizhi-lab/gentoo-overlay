@@ -15,7 +15,9 @@ S="${WORKDIR}"
 LICENSE="WPS-EULA"
 SLOT="0"
 KEYWORDS="-* ~amd64"
-IUSE="systemd"
+IUSE="systemd +fcitx ibus"
+
+REQUIRED_USE="^^ ( fcitx ibus )"
 
 RESTRICT="strip mirror bindist" # mirror as explained at bug #547372
 
@@ -88,7 +90,7 @@ src_prepare() {
 	# WPS bundles an X11-only Qt, so it runs under XWayland and only sees an input
 	# method when QT_IM_MODULE is set. Set it per-app from XMODIFIERS (fcitx/ibus)
 	# so IME works in the document area; setting it globally would break native
-	# Wayland apps on KDE (per the fcitx5 docs), so do it only in these launchers.
+	# Wayland apps on KDE (per the fcitx docs), so do it only in these launchers.
 	sed -i -e '1a export QT_IM_MODULE="${QT_IM_MODULE:-${XMODIFIERS#@im=}}"' \
 		"${S}"/usr/bin/{et,wpp,wps,wpspdf} || die
 
@@ -137,6 +139,19 @@ src_prepare() {
 src_install() {
 	dobin "${S}"/usr/bin/*
 
+	# Fix desktop Exec lines: cd to the file's directory so relative
+	# references resolve, and optionally set IME variables.
+	local im_envs=""
+	if use fcitx; then
+		im_envs="QT_QPA_PLATFORM=xcb QT_IM_MODULE=fcitx XMODIFIERS=@im=fcitx "
+	elif use ibus; then
+		im_envs="QT_QPA_PLATFORM=xcb QT_IM_MODULE=ibus XMODIFIERS=@im=ibus "
+	fi
+	sed -i "s|^Exec=/usr/bin/wps %U|Exec=sh -c 'cd \"\$(dirname \"\$1\")\" \\&\\& ${im_envs}/usr/bin/wps \"\$(basename \"\$1\")\"' _ %f|"  "${S}"/usr/share/applications/wps-office-wps.desktop || die
+	sed -i "s|^Exec=/usr/bin/et %F|Exec=sh -c 'cd \"\$(dirname \"\$1\")\" \\&\\& ${im_envs}/usr/bin/et \"\$(basename \"\$1\")\"' _ %f|"  "${S}"/usr/share/applications/wps-office-et.desktop || die
+	sed -i "s|^Exec=/usr/bin/wpp %F|Exec=sh -c 'cd \"\$(dirname \"\$1\")\" \\&\\& ${im_envs}/usr/bin/wpp \"\$(basename \"\$1\")\"' _ %f|"  "${S}"/usr/share/applications/wps-office-wpp.desktop || die
+	sed -i "s|^Exec=/usr/bin/wps %F|Exec=sh -c 'cd \"\$(dirname \"\$1\")\" \\&\\& ${im_envs}/usr/bin/wps \"\$(basename \"\$1\")\"' _ %f|"  "${S}"/usr/share/applications/wps-office-prometheus.desktop || die
+
 	insinto /usr/share
 	doins -r "${S}"/usr/share/{applications,desktop-directories,icons,mime,templates}
 
@@ -159,14 +174,6 @@ pkg_postinst() {
 	elog "dismiss it; this does not affect normal use. An account is only needed"
 	elog "for the cloud, collaboration and AI features."
 	elog ""
-	elog "Known Wayland issues and workarounds (copy to ~/.local/share/applications/):"
-	elog "  - fcitx input method not working under Wayland: add"
-	elog "    'QT_IM_MODULE=fcitx' or 'QT_IM_MODULE=ibus' to the Exec line"
-	elog "  - double-clicking a file in file manager doesn't open: ensure the"
-	elog "    desktop file's Exec line ends with %F (or %U for URLs)"
-	elog "  Example override for wps.desktop:"
-	elog "    cp /usr/share/applications/wps-office-wps.desktop ~/.local/share/applications/"
-	elog "    sed -i 's|^Exec=.*|& -- %F|' ~/.local/share/applications/wps-office-wps.desktop"
-	elog "    sed -i '/^Exec=/s|Exec=|Exec=env QT_IM_MODULE=fcitx |' \\"
-	elog "      ~/.local/share/applications/wps-office-*.desktop"
+	elog "Input method defaults to fcitx. Use USE=-fcitx ibus for ibus,"
+	elog "or USE=-fcitx to disable IME variables entirely."
 }
