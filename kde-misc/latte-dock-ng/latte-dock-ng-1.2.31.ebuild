@@ -5,7 +5,7 @@ EAPI=8
 
 inherit ecm xdg
 
-DESCRIPTION="Wayland-first Latte Dock NG for Plasma 6.5+"
+DESCRIPTION="Wayland-first Latte Dock NG for Plasma 6.3+"
 HOMEPAGE="https://github.com/ruizhi-lab/latte-dock-ng"
 SRC_URI="https://github.com/ruizhi-lab/latte-dock-ng/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz"
 
@@ -39,13 +39,13 @@ COMMON_DEPEND="
 	>=kde-frameworks/ksvg-6.0:6
 	>=kde-frameworks/kwindowsystem-6.0:6
 	>=kde-frameworks/kxmlgui-6.0:6
-	>=kde-plasma/kpipewire-6.5:6
-	>=kde-plasma/kwayland-6.5:6
-	>=kde-plasma/layer-shell-qt-6.5:6
-	>=kde-plasma/libplasma-6.5:6
-	>=kde-plasma/plasma-activities-6.5:6
-	>=kde-plasma/plasma-activities-stats-6.5:6
-	>=kde-plasma/plasma-workspace-6.5:6
+	>=kde-plasma/kpipewire-6.3:6
+	>=kde-plasma/kwayland-6.3:6
+	>=kde-plasma/layer-shell-qt-6.3:6
+	>=kde-plasma/libplasma-6.3:6
+	>=kde-plasma/plasma-activities-6.3:6
+	>=kde-plasma/plasma-activities-stats-6.3:6
+	>=kde-plasma/plasma-workspace-6.3:6
 "
 RDEPEND="${COMMON_DEPEND}"
 DEPEND="${COMMON_DEPEND}"
