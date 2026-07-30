@@ -279,19 +279,19 @@ for entry in "${PKGS[@]}"; do
   updates_found=$((updates_found + 1))
   case "${type:-github}" in
     jetbrains)
-      echo "UPDATE: ${pkg}: ${current} → ${latest}  (https://www.jetbrains.com/${pkg##*/}/download/)"
+      echo "UPDATE: ${pkg}: ${current} -> ${latest}  (https://www.jetbrains.com/${pkg##*/}/download/)"
       ;;
     scooter)
-      echo "UPDATE: ${pkg}: ${current} → ${latest}  (https://www.scootersoftware.com/download.php)"
+      echo "UPDATE: ${pkg}: ${current} -> ${latest}  (https://www.scootersoftware.com/download.php)"
       ;;
     aur)
-      echo "UPDATE: ${pkg}: ${current} → ${latest}  (https://aur.archlinux.org/packages/${repo})"
+      echo "UPDATE: ${pkg}: ${current} -> ${latest}  (https://aur.archlinux.org/packages/${repo})"
       ;;
     gentoozh)
-      echo "UPDATE: ${pkg}: ${current} → ${latest}  (https://github.com/gentoo-zh/overlay/tree/master/${repo})"
+      echo "UPDATE: ${pkg}: ${current} -> ${latest}  (https://github.com/gentoo-zh/overlay/tree/master/${repo})"
       ;;
     *)
-      echo "UPDATE: ${pkg}: ${current} → ${latest}  (https://github.com/${repo}/tags)"
+      echo "UPDATE: ${pkg}: ${current} -> ${latest}  (https://github.com/${repo}/tags)"
       ;;
   esac
 done
