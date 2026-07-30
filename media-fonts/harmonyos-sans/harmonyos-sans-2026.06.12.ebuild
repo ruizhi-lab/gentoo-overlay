@@ -7,7 +7,7 @@ inherit font
 
 DESCRIPTION="HarmonyOS Sans fonts"
 HOMEPAGE="https://developer.huawei.com/consumer/en/doc/design-guides/font-0000001828772001"
-SRC_URI="https://github.com/huawei-fonts/HarmonyOS-Sans/raw/33ab3b81b92c01f5e340c89960872bee174d8704/HarmonyOS%20Sans.zip -> ${P}.zip"
+SRC_URI="https://alliance-communityfile-drcn.dbankcdn.com/FileServer/getFile/cmtyManage/011/111/111/0000000000011111111.20260611171743.77886644144213121813005934094365:50001231000000:2800:0CCF575ADA0FCAD85EE25909C15C402A40FA94ABCCFEFC5BD37061A6B94239FF.zip -> ${P}.zip"
 S="${WORKDIR}/HarmonyOS Sans"
 
 LICENSE="HarmonyOS-Sans"
