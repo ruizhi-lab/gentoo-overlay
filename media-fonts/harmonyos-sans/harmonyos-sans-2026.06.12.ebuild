@@ -17,19 +17,10 @@ RESTRICT="mirror"
 
 BDEPEND="app-arch/unzip"
 
-FONT_S=(
-	"${S}"/HarmonyOS_Sans
-	"${S}"/HarmonyOS_Sans_Condensed
-	"${S}"/HarmonyOS_Sans_Condensed_Italic
-	"${S}"/HarmonyOS_Sans_Italic
-	"${S}"/HarmonyOS_Sans_Naskh_Arabic
-	"${S}"/HarmonyOS_Sans_Naskh_Arabic_UI
-	"${S}"/HarmonyOS_Sans_SC
-	"${S}"/HarmonyOS_Sans_TC
-)
+# 2026.06.12+ zip flattens all ttf files in the archive root
+FONT_S="${S}"
 FONT_SUFFIX="ttf"
 
 src_install() {
 	font_src_install
-	dodoc HarmonyOS_Sans/LICENSE.txt
 }
