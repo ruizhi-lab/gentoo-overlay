@@ -5,7 +5,8 @@ EAPI=8
 
 DESCRIPTION="Xorg driver modules for xrdp"
 HOMEPAGE="https://github.com/neutrinolabs/xorgxrdp"
-SRC_URI="https://github.com/neutrinolabs/${PN}/releases/download/v${PV}/${P}.tar.gz"
+# Upstream releases do not carry the -r* revision suffix.
+SRC_URI="https://github.com/neutrinolabs/${PN}/releases/download/v${PV%-r*}/${PN}-${PV%-r*}.tar.gz"
 
 LICENSE="MIT"
 SLOT="0"
