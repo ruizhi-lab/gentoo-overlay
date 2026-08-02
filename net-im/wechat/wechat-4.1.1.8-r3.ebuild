@@ -92,10 +92,14 @@ src_install() {
 		ime_envs=" XMODIFIERS=\"@im=ibus\" GTK_IM_MODULE=\"ibus\" QT_IM_MODULE=\"ibus\""
 	fi
 
+	local exec_cmd="Exec=env QT_AUTO_SCREEN_SCALE_FACTOR=1 QT_QPA_PLATFORM=\"wayland;xcb\""
+	exec_cmd+="${ime_envs}"
+	exec_cmd+=" /usr/bin/wechat %U"
+
 	sed -i \
 		-e "s|^Icon=.*|Icon=wechat|" \
 		-e "s|^Categories=.*|Categories=Network;InstantMessaging;Chat;|" \
-		-e "s|^Exec=.*|Exec=env QT_AUTO_SCREEN_SCALE_FACTOR=1 QT_QPA_PLATFORM=\"wayland;xcb\"${ime_envs} /usr/bin/wechat %U|" \
+		-e "s|^Exec=.*|${exec_cmd}|" \
 		usr/share/applications/wechat.desktop || die
 	domenu usr/share/applications/wechat.desktop
 
