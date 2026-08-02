@@ -47,9 +47,9 @@ src_unpack(){
 src_install(){
 	insinto "/opt"
 	doins -r "${S}/opt/YesPlayMusic"
+	fperms 0755 /opt/YesPlayMusic/yesplaymusic
 	for si in 16 24 32 48 64 128 256 512; do
 		doicon -s ${si} usr/share/icons/hicolor/${si}x${si}/apps/${PN%-bin}.png
 	done
 	domenu "${FILESDIR}/${PN%-bin}.desktop"
-	chmod 0755 "/opt/YesPlayMusic/yesplaymusic"
 }

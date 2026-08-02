@@ -2,8 +2,8 @@
 <!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
 <pkgmetadata>
 	<maintainer type="person">
-		<email>c2778148787@gmail.com</email>
-		<name>Raymond</name>
+		<name>Ruizhi Zhong</name>
+		<email>ruizhi.zhong88@gmail.com</email>
 	</maintainer>
 	<upstream>
 		<remote-id type="github">qier222/YesPlayMusic</remote-id>
