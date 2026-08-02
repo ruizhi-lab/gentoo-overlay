@@ -26,7 +26,11 @@ jobs:
           echo "${RAW}" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
           JSON=$(.github/scripts/check-updates.sh --json 2>&1) || true
-          echo "json=$JSON" >> $GITHUB_OUTPUT
+          {
+            echo "json<<EOF"
+            echo "${JSON}"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
 
       - name: Create issue if updates found
         if: steps.check.outputs.output != ''
