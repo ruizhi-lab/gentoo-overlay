@@ -2,8 +2,8 @@
 <!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
 <pkgmetadata>
 	<maintainer type="person">
-		<email>raymond@zozx.top</email>
-		<name>Raymond</name>
+		<name>Ruizhi Zhong</name>
+		<email>ruizhi.zhong88@gmail.com</email>
 	</maintainer>
 	<upstream>
 		<remote-id type="github">be5invis/Sarasa-Gothic</remote-id>
