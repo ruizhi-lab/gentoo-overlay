@@ -9,10 +9,13 @@ DESCRIPTION="Compare, merge files and folders using simple, powerful commands"
 HOMEPAGE="https://www.scootersoftware.com"
 SRC_URI="
 	https://www.scootersoftware.com/${P}.x86_64.tar.gz
-	https://downloads.sourceforge.net/sevenzip/7-Zip/26.01/7z2601-src.tar.xz
+	https://www.7-zip.org/a/7z2601-src.tar.xz
 "
 
-LICENSE="Bcompare"
+# Bcompare is the Scooter Software EULA; LGPL-2 covers lib7z.so built from the
+# 7-Zip source tarball (Format7zF bundle, see https://www.7-zip.org/ for the
+# 7-Zip license terms).
+LICENSE="Bcompare LGPL-2"
 SLOT="0"
 KEYWORDS="-* ~amd64"
 IUSE="caja kde nautilus nemo thunar"
