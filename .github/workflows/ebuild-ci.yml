@@ -69,6 +69,15 @@ jobs:
           auto-sync = no
           EOF
 
+      - name: Register guru overlay (required by masters)
+        run: |
+          git clone --depth=1 https://github.com/gentoo-mirror/guru.git /var/db/repos/guru
+          cat > /etc/portage/repos.conf/guru.conf << EOF
+          [guru]
+          location = /var/db/repos/guru
+          auto-sync = no
+          EOF
+
       - name: Find changed ebuilds
         id: changed
         run: |
@@ -119,13 +128,17 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
           echo "Found ebuilds: ${EBUILDS}"
 
-      - name: Smoke test (manifest check)
+      - name: Smoke test (pkgcheck scan)
         run: |
-          echo "=== Smoke test: verify Manifest integrity ==="
+          echo "=== Smoke test: pkgcheck scan ==="
           if ! command -v pkgcheck &>/dev/null; then
             emerge -1 --quiet dev-util/pkgcheck 2>&1 || true
           fi
-          echo "Smoke test passed!"
+          if command -v pkgcheck &>/dev/null; then
+            pkgcheck scan --repo=ruizhi-overlay
+          else
+            echo "pkgcheck unavailable, skipping scan"
+          fi
 
       - name: Verify ebuilds (${{ matrix.init }})
         if: steps.changed.outputs.ebuilds != ''
@@ -142,7 +155,7 @@ jobs:
           while IFS= read -r ebuild; do
             [ -z "${ebuild}" ] && continue
             ebuild="${GITHUB_WORKSPACE}/repo/${ebuild}"
-            pkg=$(basename "$(dirname "$(dirname "${ebuild}")")")
+            pkg=$(basename "$(dirname "${ebuild}")")
 
             echo ""
             echo "=== ${pkg} ==="
