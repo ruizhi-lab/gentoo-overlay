@@ -5,6 +5,9 @@
 		<name>Ruizhi Zhong</name>
 		<email>ruizhi.zhong88@gmail.com</email>
 	</maintainer>
+	<use>
+		<flag name="wayland">Enable experimental Wayland support in JetBrains Runtime.</flag>
+	</use>
 	<upstream>
 		<bugs-to>https://youtrack.jetbrains.com/issues/DBE</bugs-to>
 	</upstream>
