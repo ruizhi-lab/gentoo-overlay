@@ -147,10 +147,20 @@ src_install() {
 	elif use ibus; then
 		im_envs="QT_QPA_PLATFORM=xcb QT_IM_MODULE=ibus XMODIFIERS=@im=ibus "
 	fi
-	sed -i "s|^Exec=/usr/bin/wps %U|Exec=sh -c 'cd \"\$(dirname \"\$1\")\" \\&\\& ${im_envs}/usr/bin/wps \"\$(basename \"\$1\")\"' _ %f|"  "${S}"/usr/share/applications/wps-office-wps.desktop || die
-	sed -i "s|^Exec=/usr/bin/et %F|Exec=sh -c 'cd \"\$(dirname \"\$1\")\" \\&\\& ${im_envs}/usr/bin/et \"\$(basename \"\$1\")\"' _ %f|"  "${S}"/usr/share/applications/wps-office-et.desktop || die
-	sed -i "s|^Exec=/usr/bin/wpp %F|Exec=sh -c 'cd \"\$(dirname \"\$1\")\" \\&\\& ${im_envs}/usr/bin/wpp \"\$(basename \"\$1\")\"' _ %f|"  "${S}"/usr/share/applications/wps-office-wpp.desktop || die
-	sed -i "s|^Exec=/usr/bin/wps %F|Exec=sh -c 'cd \"\$(dirname \"\$1\")\" \\&\\& ${im_envs}/usr/bin/wps \"\$(basename \"\$1\")\"' _ %f|"  "${S}"/usr/share/applications/wps-office-prometheus.desktop || die
+
+	local spec file pat bin dir_cd tpl
+	for spec in "wps-office-wps.desktop:/usr/bin/wps %U" \
+		"wps-office-et.desktop:/usr/bin/et %F" \
+		"wps-office-wpp.desktop:/usr/bin/wpp %F" \
+		"wps-office-prometheus.desktop:/usr/bin/wps %F"; do
+		file=${spec%%:*}
+		pat=${spec#*:}
+		bin=${pat%% *}
+		dir_cd="Exec=sh -c 'cd \"\$(dirname \"\$1\")\""
+		tpl="${dir_cd} \\&\\& ${im_envs}${bin} \"\$(basename \"\$1\")\"' _ %f"
+		sed -i "s|^Exec=${pat}|${tpl}|" \
+			"${S}"/usr/share/applications/${file} || die
+	done
 
 	insinto /usr/share
 	doins -r "${S}"/usr/share/{applications,desktop-directories,icons,mime,templates}
