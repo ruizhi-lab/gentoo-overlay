@@ -139,8 +139,11 @@ src_prepare() {
 src_install() {
 	dobin "${S}"/usr/bin/*
 
-	# Fix desktop Exec lines: cd to the file's directory so relative
-	# references resolve, and optionally set IME variables.
+	# The .desktop Exec value cannot carry shell code: desktop-file-validate
+	# rejects the '$', '&' and '\'' characters. Install wrapper scripts that
+	# cd to the file's directory so relative references in the document
+	# resolve, and set the IME variables, then point the .desktop files at
+	# the wrappers with a plain %f field code.
 	local im_envs=""
 	if use fcitx; then
 		im_envs="QT_QPA_PLATFORM=xcb QT_IM_MODULE=fcitx XMODIFIERS=@im=fcitx "
@@ -148,7 +151,7 @@ src_install() {
 		im_envs="QT_QPA_PLATFORM=xcb QT_IM_MODULE=ibus XMODIFIERS=@im=ibus "
 	fi
 
-	local spec file pat bin dir_cd tpl
+	local spec file pat bin wrapper
 	for spec in "wps-office-wps.desktop:/usr/bin/wps %U" \
 		"wps-office-et.desktop:/usr/bin/et %F" \
 		"wps-office-wpp.desktop:/usr/bin/wpp %F" \
@@ -156,9 +159,22 @@ src_install() {
 		file=${spec%%:*}
 		pat=${spec#*:}
 		bin=${pat%% *}
-		dir_cd="Exec=sh -c 'cd \"\$(dirname \"\$1\")\""
-		tpl="${dir_cd} \\&\\& ${im_envs}${bin} \"\$(basename \"\$1\")\"' _ %f"
-		sed -i "s|^Exec=${pat}|${tpl}|" \
+		wrapper="wps-office-${file#wps-office-}"; wrapper=${wrapper%.desktop}
+
+		cat > "${T}/${wrapper}" <<-EOF || die
+			#!/bin/sh
+			# cd to the file's directory so relative references resolve, and
+			# set the IME environment for the bundled X11-only Qt (also when
+			# launching without a file, e.g. from the app menu).
+			f="\$1"
+			if [ -z "\$f" ]; then
+				exec env ${im_envs}${bin}
+			fi
+			cd "\$(dirname "\$f")" || exit 1
+			exec env ${im_envs}${bin} "\$(basename "\$f")"
+		EOF
+		dobin "${T}/${wrapper}" || die
+		sed -i "s|^Exec=${pat}|Exec=${wrapper} %f|" \
 			"${S}"/usr/share/applications/${file} || die
 	done
 

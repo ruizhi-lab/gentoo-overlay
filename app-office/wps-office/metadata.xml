@@ -7,8 +7,8 @@
 	</maintainer>
 	<use>
 		<flag name="systemd">Use systemd's D-Bus library instead of the bundled libdbus</flag>
-		<flag name="fcitx">Set IME environment variables for fcitx in desktop files.</flag>
-		<flag name="ibus">Set IME environment variables for ibus in desktop files.</flag>
+		<flag name="fcitx">Set IME environment variables for fcitx in the wps-office launcher scripts.</flag>
+		<flag name="ibus">Set IME environment variables for ibus in the wps-office launcher scripts.</flag>
 	</use>
 	<upstream>
 		<!-- SRC_URI is a community mirror (dogfood.gnupg.uk) of the official WPS .deb; upstream does not host direct downloads. -->
