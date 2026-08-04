@@ -52,9 +52,12 @@ jobs:
           emerge -1 --quiet app-arch/unzip 2>&1 || echo "unzip: emerge failed"
           # ar (binutils) needed for unpacker eclass (.deb extraction)
           command -v ar >/dev/null 2>&1 || emerge -1 --quiet sys-devel/binutils 2>&1 || true
+          # git is no longer shipped in stage3 images (removed upstream
+          # 2026-08); required by the guru clone and changed-ebuild detection
+          command -v git >/dev/null 2>&1 || emerge -1 --quiet dev-vcs/git
           echo ""
           echo "=== Tool check ==="
-          for tool in unzip tar gzip xz ar; do
+          for tool in unzip tar gzip xz ar git; do
             command -v $tool >/dev/null 2>&1 && echo "$tool: OK" || echo "$tool: MISSING"
           done
 
