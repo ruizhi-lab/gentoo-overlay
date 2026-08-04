@@ -15,3 +15,11 @@ emaint sync -r ruizhi-overlay
 
 This overlay uses `guru` as an additional master repository for packages that
 are not available in the main Gentoo repository, such as `app-arch/libzim`.
+
+## Notes
+
+- `net-misc/baidunetdisk` depends on the deprecated `dev-cpp/gtkmm:2.4` slot.
+  The bundled `libbrowserengine.so` hard-links `libgtkmm-2.4.so.1` at runtime
+  (different soname/ABI from gtkmm:4, not replaceable). Once Gentoo removes
+  `gtkmm:2.4` from the tree, this package cannot be installed until upstream
+  drops that dependency.
