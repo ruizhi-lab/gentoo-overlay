@@ -25,6 +25,7 @@ PKGS=(
   "net-proxy/v2rayn-bin|2dust/v2rayN||github"
   "media-fonts/harmonyos-sans|ttf-harmonyos-sans||aur"
   "net-im/wechat|net-im/wechat||gentoozh"
+  "net-misc/baidunetdisk|net-misc/baidunetdisk||gentoozh"
   "dev-util/datagrip|DG||jetbrains"
   "app-misc/bcompare|bcompare||scooter"
   "app-office/wps-office|wps-office-cn||aur"
@@ -262,7 +263,15 @@ for entry in "${PKGS[@]}"; do
   cur=$(strip_prefix "$current" "$prefix")
   lat=$(strip_prefix "$latest" "$prefix")
 
-  [[ "$cur" != "$lat" ]] || continue
+  # Report only when upstream is strictly newer. Sources can lag behind
+  # (e.g. a stale AUR package); comparing for inequality would then
+  # emit downgrade alerts.
+  if [[ "$cur" == "$lat" ]]; then
+    continue
+  fi
+  if [[ "$(printf '%s\n%s\n' "$cur" "$lat" | sort -V | tail -1)" == "$cur" ]]; then
+    continue
+  fi
 
   # Snapshot check: if current is 2.7.0_p20240625 and latest is v2.7.0,
   # the snapshot is git HEAD and newer than the release — skip.
