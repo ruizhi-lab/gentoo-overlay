@@ -65,6 +65,15 @@ jobs:
         run: |
           REPO_DIR="${GITHUB_WORKSPACE}/repo"
           mkdir -p /etc/portage/repos.conf
+          # stage3 images no longer ship a repos.conf entry for gentoo.
+          # portage falls back to PORTDIR silently, but pkgcore-based
+          # tools (pkgcheck) error out without an explicit definition.
+          cat > /etc/portage/repos.conf/gentoo.conf << EOF
+          [gentoo]
+          location = /var/db/repos/gentoo
+          sync-type = webrsync
+          auto-sync = no
+          EOF
           cat > /etc/portage/repos.conf/ruizhi-overlay.conf << EOF
           [ruizhi-overlay]
           location = ${REPO_DIR}
