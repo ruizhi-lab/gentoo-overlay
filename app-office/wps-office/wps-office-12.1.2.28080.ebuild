@@ -25,7 +25,7 @@ IUSE="systemd +fcitx ibus"
 
 REQUIRED_USE="^^ ( fcitx ibus )"
 
-RESTRICT="fetch strip mirror bindist" # fetch: signed URL, see above; mirror: bug #547372
+RESTRICT="fetch network-sandbox strip mirror bindist" # signed URL needs net in src_unpack; mirror: bug #547372
 
 # Prebuilt bundled blob: keep the vendored libraries and their sonames as-is.
 QA_PREBUILT="*"
