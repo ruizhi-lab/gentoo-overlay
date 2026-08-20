@@ -8,7 +8,13 @@ inherit unpacker xdg
 DESCRIPTION="WPS Office is an office productivity suite, Here is the Chinese version"
 HOMEPAGE="https://www.wps.cn/product/wpslinux/"
 
-SRC_URI="https://dogfood.gnupg.uk/wps302/${PV}/amd64 -> ${PN}_${PV}_amd64.deb"
+# WPS only publishes the .deb behind a CDN that requires a time-signed URL
+# (t=unix-ts, k=md5(secret+path+t), valid for ~1h), so it cannot be expressed
+# as a static SRC_URI. The community mirror used previously (dogfood.gnupg.uk)
+# is stale for this release (its redirect points at a CDN object that no
+# longer exists), so src_unpack() signs and fetches the URL itself.
+MY_BUILD_ID="765474" # WPS build id, matches the current AUR wps-office-cn package
+MY_SIGN_KEY="7f8faaaa468174dc1c9cd62e5f218a5b" # public CDN signing key (see the AUR PKGBUILD)
 
 S="${WORKDIR}"
 
@@ -19,7 +25,7 @@ IUSE="systemd +fcitx ibus"
 
 REQUIRED_USE="^^ ( fcitx ibus )"
 
-RESTRICT="strip mirror bindist" # mirror as explained at bug #547372
+RESTRICT="fetch strip mirror bindist" # fetch: signed URL, see above; mirror: bug #547372
 
 # Prebuilt bundled blob: keep the vendored libraries and their sonames as-is.
 QA_PREBUILT="*"
@@ -68,6 +74,25 @@ RDEPEND="
 	x11-libs/libxkbcommon[X]
 	x11-libs/pango
 "
+
+src_unpack() {
+	# WPS CDN signed URL: t = unix time, k = md5(sign-key + path + t).
+	# Write into WORKDIR: the build-local DISTDIR is root-owned and not
+	# writable under userpriv (and RESTRICT=fetch means portage never
+	# fetches this file into the real distfiles dir anyway).
+	local uri="/wps/download/ep/Linux2023/${PV##*.}/wps-office_${PV}.AK.preread.sw.Personal_${MY_BUILD_ID}_amd64.deb"
+	local deb="${WORKDIR}/${PN}_${PV}_amd64.deb"
+
+	if [[ ! -s ${deb} ]] || ! head -c 8 "${deb}" | grep -q '!<arch>'; then
+		local ts=$(date +%s)
+		local k=$(printf '%s' "${MY_SIGN_KEY}${uri}${ts}" | md5sum | awk '{print $1}')
+		einfo "Fetching ${uri##*/} from the WPS CDN"
+		wget -q -O "${deb}" "https://wps-linux-personal.wpscdn.cn${uri}?t=${ts}&k=${k}" \
+			|| die "failed to download WPS Office from the WPS CDN"
+	fi
+
+	unpacker "${deb}"
+}
 
 src_prepare() {
 	default
