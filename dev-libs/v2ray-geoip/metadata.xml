@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<name>Ruizhi Zhong</name>
+		<email>ruizhi.zhong88@gmail.com</email>
+	</maintainer>
+	<longdescription lang="en">
+		GeoIP for V2Ray: builds geoip.dat from source using the db-ip
+		country-lite database and the v2fly/geoip tooling.
+	</longdescription>
+	<upstream>
+		<remote-id type="github">v2fly/geoip</remote-id>
+	</upstream>
+</pkgmetadata>

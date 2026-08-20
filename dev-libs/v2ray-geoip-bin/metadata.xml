@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<name>Ruizhi Zhong</name>
+		<email>ruizhi.zhong88@gmail.com</email>
+	</maintainer>
+	<longdescription lang="en">
+		GeoIP database for V2Ray, maintained by the v2fly project. Provides
+		the geoip.dat data file used to map IP addresses to countries, which
+		enables geo-based routing rules in proxy tools such as V2Ray and Xray.
+		Consumed through the app-alternatives/v2ray-geoip virtual package.
+		Updates are published regularly as date-stamped releases.
+	</longdescription>
+	<upstream>
+		<remote-id type="github">v2fly/geoip</remote-id>
+	</upstream>
+</pkgmetadata>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<name>Ruizhi Zhong</name>
+		<email>ruizhi.zhong88@gmail.com</email>
+	</maintainer>
+	<use>
+		<flag name="v2fly">Use the v2fly project's geoip data (virtual/v2ray-geoip)</flag>
+		<flag name="loyalsoldier">Use the Loyalsoldier enhanced geoip data (dev-libs/v2ray-rules-dat-bin[geoip])</flag>
+	</use>
+	<longdescription lang="en">
+		Virtual package that provides the V2Ray geoip.dat data file via the
+		app-alternatives framework. Installs a symlink /usr/share/v2ray/geoip.dat
+		pointing at the data file of the selected provider.
+	</longdescription>
+</pkgmetadata>
