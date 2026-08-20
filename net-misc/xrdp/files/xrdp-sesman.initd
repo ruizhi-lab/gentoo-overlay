@@ -1,0 +1,15 @@
+#!/sbin/openrc-run
+# Copyright 2026 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+# xrdp-sesman daemonizes itself and writes its own pidfile to
+# /run/xrdp-sesman.pid.
+
+command="/usr/sbin/xrdp-sesman"
+pidfile="/run/xrdp-sesman.pid"
+start_stop_daemon_args="--wait 1000"
+
+depend() {
+	need net
+	after bootmisc
+}

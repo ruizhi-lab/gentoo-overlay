@@ -61,6 +61,25 @@ src_configure() {
 	econf "${myeconfargs[@]}"
 }
 
+src_install() {
+	default
+
+	if ! use systemd; then
+		# Upstream ships an LSB init script (instfiles/init.d/xrdp) that
+		# sources /lib/lsb/init-functions, which OpenRC does not provide:
+		# `/etc/init.d/xrdp status` dies with "No such file or directory".
+		# Replace it with proper OpenRC init scripts.
+		rm -f "${ED}"/etc/init.d/xrdp || die
+		newinitd "${FILESDIR}/xrdp.initd" xrdp || die
+		newinitd "${FILESDIR}/xrdp-sesman.initd" xrdp-sesman || die
+	fi
+}
+
 pkg_postinst() {
-	elog "xrdp installed. Enable and start the xrdp service if needed."
+	if use systemd; then
+		elog "Enable the xrdp service with: systemctl enable --now xrdp"
+	else
+		elog "Enable the xrdp service with: rc-update add xrdp default"
+		elog "(this also starts the xrdp-sesman service it depends on)"
+	fi
 }

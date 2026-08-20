@@ -1,0 +1,19 @@
+#!/sbin/openrc-run
+# Copyright 2026 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+# The xrdp daemon daemonizes itself and writes its own pidfile to
+# /run/xrdp.pid. Wait briefly for the pidfile to appear so a rapid
+# start/status sequence does not race the daemon startup.
+
+command="/usr/sbin/xrdp"
+pidfile="/run/xrdp.pid"
+start_stop_daemon_args="--wait 1000"
+
+depend() {
+	need net
+	# Mirror the upstream LSB init script, which starts xrdp-sesman
+	# together with xrdp.
+	need xrdp-sesman
+	after bootmisc
+}
