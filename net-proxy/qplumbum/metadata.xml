@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<name>Ruizhi Zhong</name>
+		<email>ruizhi.zhong88@gmail.com</email>
+	</maintainer>
+	<longdescription lang="en">
+		Plumbum is a Qt 6 Linux desktop client for Xray and V2Ray. It supports
+		multiple proxy protocols, subscriptions, system proxy integration, and
+		Xray/V2Ray gRPC statistics.
+	</longdescription>
+	<upstream>
+		<remote-id type="github">ruizhi-lab/Qplumbum</remote-id>
+	</upstream>
+</pkgmetadata>
