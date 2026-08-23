@@ -11,7 +11,8 @@ EGIT_REPO_URI="https://github.com/ruizhi-lab/Qplumbum.git"
 
 LICENSE="GPL-3+"
 SLOT="0"
-KEYWORDS="~amd64"
+KEYWORDS=""
+PROPERTIES="live"
 
 DEPEND="
 	dev-libs/openssl
