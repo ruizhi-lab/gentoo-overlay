@@ -2,7 +2,7 @@ name: Check upstream updates
 
 on:
   schedule:
-    - cron: '37 8 * * 4'  # every Thursday at 08:37 UTC
+    - cron: '37 8 * * 2'  # every Tuesday at 08:37 UTC
   workflow_dispatch:       # allow manual trigger
 
 permissions:
