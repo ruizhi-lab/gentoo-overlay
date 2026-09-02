@@ -38,8 +38,9 @@ jobs:
         with:
           script: |
             const output = `${{ steps.check.outputs.output }}`;
-            const lines = output.trim().split('\n');
-            const title = `📦 ${lines.length} package(s) have upstream updates`;
+            const updateCount = output.split('\n')
+              .filter(line => line.startsWith('UPDATE: ')).length;
+            const title = `📦 ${updateCount} package(s) have upstream updates`;
             const body = '## Upstream updates detected\n\n```\n' + output + '\n```\n\n'
               + 'Please bump the ebuilds accordingly.';
 
