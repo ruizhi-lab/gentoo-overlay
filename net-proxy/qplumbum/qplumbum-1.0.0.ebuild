@@ -3,7 +3,7 @@
 
 EAPI=8
 
-inherit cmake desktop xdg
+inherit cmake xdg
 
 DESCRIPTION="Qt 6 Linux GUI client for Xray and V2Ray"
 HOMEPAGE="https://github.com/ruizhi-lab/Qplumbum"

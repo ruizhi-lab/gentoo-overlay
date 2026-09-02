@@ -3,7 +3,7 @@
 
 EAPI=8
 
-inherit unpacker xdg
+inherit desktop unpacker xdg
 
 DESCRIPTION="WPS Office is an office productivity suite, Here is the Chinese version"
 HOMEPAGE="https://www.wps.cn/product/wpslinux/"
@@ -203,8 +203,12 @@ src_install() {
 			"${S}"/usr/share/applications/${file} || die
 	done
 
+	# Install application launchers through desktop.eclass so they follow
+	# Gentoo's desktop-entry installation conventions.
+	domenu "${S}"/usr/share/applications/*.desktop
+
 	insinto /usr/share
-	doins -r "${S}"/usr/share/{applications,desktop-directories,icons,mime,templates}
+	doins -r "${S}"/usr/share/{desktop-directories,icons,mime,templates}
 
 	insinto /opt/kingsoft/wps-office
 	use systemd || { rm "${S}"/opt/kingsoft/wps-office/office6/libdbus-1.so* || die ; }
