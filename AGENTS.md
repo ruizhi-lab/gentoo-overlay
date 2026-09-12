@@ -46,6 +46,12 @@ explicitly requires otherwise.
 
 ## Patches
 
+- Make deterministic source-tree edits during `src_prepare()`, not
+  `src_compile()`. A small build-flag adjustment may use `sed` when the expected
+  input is checked first and a mismatch calls `die`.
+- Dynamic desktop-entry values derived from USE flags may be edited during the
+  install phase with validated `sed` substitutions. A complete replacement
+  desktop file should live under `files/` and be installed with `newmenu`.
 - Keep source compatibility fixes as dedicated files under `files/` and apply
   them through `PATCHES`. Do not hide such changes in ad-hoc `sed` commands.
 - Patch headers should explain the purpose and include author/date, a

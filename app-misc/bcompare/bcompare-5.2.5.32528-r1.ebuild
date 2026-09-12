@@ -55,10 +55,16 @@ src_unpack() {
 	unpack 7z2601-src.tar.xz
 }
 
-src_compile() {
-	# Remove -Werror to avoid build failures from harmless warnings
-	sed -i 's/-Werror //g' "${WORKDIR}/CPP/7zip/7zip_gcc.mak" || die
+src_prepare() {
+	default
 
+	# Remove -Werror to avoid build failures from harmless warnings.
+	local makefile="${WORKDIR}/CPP/7zip/7zip_gcc.mak"
+	grep -q -- '-Werror ' "${makefile}" || die "-Werror flag not found"
+	sed -i 's/-Werror //g' "${makefile}" || die
+}
+
+src_compile() {
 	pushd "${WORKDIR}/CPP/7zip/Bundles/Format7zF" > /dev/null || die
 	emake -f makefile.gcc \
 		CC="$(tc-getCC)" \
