@@ -61,7 +61,9 @@ src_prepare() {
 	)
 
 	for file in "${so_files[@]}"; do
-		patchelf --set-rpath '$ORIGIN' "opt/wechat/${file}" || die
+		if [[ -f "opt/wechat/${file}" ]]; then
+			patchelf --set-rpath '$ORIGIN' "opt/wechat/${file}" || die
+		fi
 	done
 }
 
