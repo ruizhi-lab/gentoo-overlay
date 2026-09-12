@@ -5,6 +5,7 @@
 #
 # Entry format: "category/package|source|version_prefix|type"
 #   type=github:    source is GitHub repo (e.g. "v2fly/v2ray-core")
+#   type=github-date-hyphen: GitHub tag YYYYMMDD-N maps to Gentoo YYYYMMDD.N
 #   type=jetbrains: source is JetBrains product code (e.g. "DG")
 #   type=scooter:   source is unused; scrapes scootersoftware.com kb/linux_install
 #   type=aur:       source is AUR package name (e.g. "wps-office-cn")
@@ -17,6 +18,7 @@ PKGS=(
   "app-text/goldendict-ng|xiaoyifang/goldendict-ng|v|github"
   "app-text/quarto-bin|quarto-dev/quarto-cli|v|github"
   "kde-misc/latte-dock-ng|ruizhi-lab/latte-dock-ng|v|github"
+  "kde-misc/kwin-effects-glass|4v3ngR/kwin-effects-glass||github-date-hyphen"
   "media-fonts/sarasa-gothic|be5invis/Sarasa-Gothic|v|github"
   "media-fonts/sarasa-term-sc-nerd|laishulu/Sarasa-Term-SC-Nerd|v|github"
   "media-sound/yesplaymusic-bin|qier222/YesPlayMusic|v|github"
@@ -134,7 +136,9 @@ stable = []
 for t in tags:
     name = t["name"]
     stripped = name.lstrip("v")
-    if not (re.match(r"^\d+(\.\d+)+$", stripped) or re.match(r"^\d{12,14}$", stripped)):
+    if not (re.match(r"^\d+(\.\d+)+$", stripped)
+            or re.match(r"^\d{12,14}$", stripped)
+            or re.match(r"^\d{8}-\d+$", stripped)):
         continue
     if prerelease_word.search(stripped):
         continue
@@ -142,7 +146,7 @@ for t in tags:
 
 if stable:
     def sort_key(v):
-        parts = v.split(".")
+        parts = re.split(r"[.-]", v)
         try:
             return (0, tuple(int(p) for p in parts))
         except ValueError:
@@ -260,6 +264,14 @@ for entry in "${PKGS[@]}"; do
       latest=$(get_gentoozh_latest "$repo")
       [[ -z "$latest" ]] && continue
       ;;
+    github-date-hyphen)
+      # Compare release tags in their upstream form so an equal release does
+      # not look older than the Gentoo-normalized PV and trigger a tags
+      # fallback. For example, 20260620.1 maps back to 20260620-1.
+      current_tag="${current/./-}"
+      latest=$(get_latest_stable "$repo" "$current_tag")
+      [[ -z "$latest" || "$latest" == "null" ]] && continue
+      ;;
     *)
       latest=$(get_latest_stable "$repo" "$current")
       [[ -z "$latest" || "$latest" == "null" ]] && continue
@@ -268,6 +280,13 @@ for entry in "${PKGS[@]}"; do
 
   cur=$(strip_prefix "$current" "$prefix")
   lat=$(strip_prefix "$latest" "$prefix")
+
+  # Gentoo versions cannot represent an upstream release counter with a
+  # hyphen because that syntax is reserved for ebuild revisions. Map tags such
+  # as 20260620-1 to the corresponding Gentoo PV 20260620.1 for comparison.
+  if [[ "${type:-github}" == "github-date-hyphen" ]]; then
+    lat="${lat/-/.}"
+  fi
 
   # Report only when upstream is strictly newer. Sources can lag behind
   # (e.g. a stale AUR package); comparing for inequality would then

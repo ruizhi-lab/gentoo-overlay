@@ -1,0 +1,23 @@
+From: Ruizhi Zhong <ruizhi.zhong88@gmail.com>
+Date: Sat, 12 Sep 2026 23:30:00 +0800
+Subject: [PATCH] Fix assignment to KWin::Region on Plasma 6.6
+Upstream-Status: Backport [upstream main]
+Upstream: https://github.com/4v3ngR/kwin-effects-glass/blob/main/src/blur.cpp
+
+KWin 6.6 uses KWin::Region for Wayland blur regions.  Convert the QRect
+explicitly instead of relying on the removed implicit assignment.
+
+--- a/src/blur.cpp
++++ b/src/blur.cpp
+@@ -812,7 +812,11 @@
+         if (!m_settings.roundedCorners.ignoreContentBlurRegion || w->isDock()) {
+             if (content.has_value()) {
+                 if (content->isEmpty()) {
++#ifdef GLASS_X11
+                     region = w->contentsRect().toAlignedRect();
++#else
++                    region = Region(Rect(w->contentsRect().toAlignedRect()));
++#endif
+                 } else {
+                     region = content->translated(
+                             w->contentsRect().x(),
