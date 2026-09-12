@@ -24,6 +24,7 @@ BDEPEND="
 "
 RDEPEND="
 	app-accessibility/at-spi2-core
+	app-arch/bzip2
 	virtual/krb5
 	dev-libs/nss
 	media-libs/libpulse
@@ -65,6 +66,11 @@ src_prepare() {
 			patchelf --set-rpath '$ORIGIN' "opt/wechat/${file}" || die
 		fi
 	done
+
+	if [[ -f opt/wechat/libwxtrans.so ]]; then
+		patchelf --replace-needed libbz2.so.1.0 libbz2.so.1 \
+			opt/wechat/libwxtrans.so || die
+	fi
 }
 
 src_install() {
