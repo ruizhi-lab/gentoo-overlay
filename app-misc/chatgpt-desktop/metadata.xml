@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<name>Ruizhi Zhong</name>
+		<email>ruizhi.zhong@gmail.com</email>
+	</maintainer>
+	<use>
+		<flag name="apparmor">Install the AppArmor profile.</flag>
+		<flag name="qt6">Use the Qt 6 integration shim.</flag>
+		<flag name="wayland">Enable native Wayland support.</flag>
+	</use>
+</pkgmetadata>

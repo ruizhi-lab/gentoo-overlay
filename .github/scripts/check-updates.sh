@@ -4,11 +4,12 @@
 # Usage: ./check-updates.sh [--json]
 #
 # Entry format: "category/package|source|version_prefix|type"
-#   type=github:    source is GitHub repo (e.g. "v2fly/v2ray-core")
+#   type=github:    source is GitHub repo (e.g. "owner/repository")
 #   type=github-date-hyphen: GitHub tag YYYYMMDD-N maps to Gentoo YYYYMMDD.N
 #   type=jetbrains: source is JetBrains product code (e.g. "DG")
 #   type=scooter:   source is unused; scrapes scootersoftware.com kb/linux_install
 #   type=aur:       source is AUR package name (e.g. "wps-office-cn")
+#   type=openai-deb: source is the OpenAI Debian Packages index
 
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -23,20 +24,15 @@ PKGS=(
   "media-fonts/sarasa-term-sc-nerd|laishulu/Sarasa-Term-SC-Nerd|v|github"
   "media-sound/yesplaymusic-bin|qier222/YesPlayMusic|v|github"
   "net-misc/xrdp|neutrinolabs/xrdp|v|github"
-  "net-misc/xorgxrdp|neutrinolabs/xorgxrdp|v|github"
   "net-proxy/v2rayn-bin|2dust/v2rayN||github"
-  "net-proxy/v2ray|v2fly/v2ray-core|v|github"
-  "net-proxy/v2ray-bin|v2fly/v2ray-core|v|github"
-  "dev-libs/v2ray-rules-dat-bin|Loyalsoldier/v2ray-rules-dat||github"
-  "dev-libs/v2ray-domain-list-community-bin|v2fly/domain-list-community||github"
-  "dev-libs/v2ray-geoip-bin|v2fly/geoip||github"
-  "dev-libs/v2ray-geoip|v2fly/geoip||github"
+  "net-misc/xorgxrdp|neutrinolabs/xorgxrdp|v|github"
   "media-fonts/harmonyos-sans|ttf-harmonyos-sans||aur"
   "net-im/wechat|net-im/wechat||gentoozh"
   "net-misc/baidunetdisk|net-misc/baidunetdisk||gentoozh"
   "dev-util/datagrip|DG||jetbrains"
   "app-misc/bcompare|bcompare||scooter"
   "app-office/wps-office|wps-office-cn||aur"
+  "app-misc/chatgpt-desktop|https://persistent.oaistatic.com/codex-app-prod/linux/deb/dists/stable/main/binary-amd64/Packages||openai-deb"
 )
 
 GH_API="${GITHUB_API_URL:-https://api.github.com}"
@@ -239,6 +235,14 @@ except: pass
 ' 2>/dev/null || echo ""
 }
 
+# Get the latest ChatGPT Desktop version from OpenAI's Debian repository.
+# The amd64 Packages index is sufficient because both supported architectures
+# are published from the same release stream.
+get_openai_deb_latest() {
+  curl ${CURL_OPTS} "$1" 2>/dev/null \
+    | awk '/^Package: chatgpt$/{found=1; next} found && /^Version:/{print $2; exit} found && /^Package:/{exit}'
+}
+
 updates_found=0
 
 for entry in "${PKGS[@]}"; do
@@ -262,6 +266,10 @@ for entry in "${PKGS[@]}"; do
       ;;
     gentoozh)
       latest=$(get_gentoozh_latest "$repo")
+      [[ -z "$latest" ]] && continue
+      ;;
+    openai-deb)
+      latest=$(get_openai_deb_latest "$repo")
       [[ -z "$latest" ]] && continue
       ;;
     github-date-hyphen)
@@ -323,6 +331,9 @@ for entry in "${PKGS[@]}"; do
       ;;
     gentoozh)
       echo "UPDATE: ${pkg}: ${current} -> ${latest}  (https://github.com/gentoo-zh/overlay/tree/master/${repo})"
+      ;;
+    openai-deb)
+      echo "UPDATE: ${pkg}: ${current} -> ${latest}  (${repo})"
       ;;
     *)
       echo "UPDATE: ${pkg}: ${current} -> ${latest}  (https://github.com/${repo}/tags)"
