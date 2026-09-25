@@ -95,8 +95,10 @@ explicitly requires otherwise.
 ### cockpit and cockpit-machines
 
 - Package locations: `app-admin/cockpit` and `app-admin/cockpit-machines`.
-- Cockpit Machines is a Cockpit plugin and requires a matching or newer
-  `app-admin/cockpit` release (`>=cockpit-machines PV`).
+- Cockpit Machines requires a Cockpit bridge version compatible with upstream's
+  minimum; do not assume its release number must match the Cockpit Machines PV.
+- Keep `libvirt-dbus` as a separate runtime dependency: libvirt's D-Bus support
+  and the `libvirt-dbus` service are distinct components.
 - Follow upstream stable GitHub releases. Release tags are valid Gentoo
   versions, so use the `github` update-check type without a version prefix.
 - Preserve Cockpit's Gentoo branding assets and PAM configuration under

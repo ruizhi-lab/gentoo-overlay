@@ -12,10 +12,10 @@ LICENSE="LGPL-2.1"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
 
-BDEPEND="sys-libs/libosinfo"
+BDEPEND="sys-devel/gettext"
 RDEPEND="
-	>=app-admin/cockpit-${PV}
-	app-emulation/libvirt-dbus
+	>=app-admin/cockpit-215
+	>=app-emulation/libvirt-dbus-1.2.0
 	app-emulation/libvirt[firewalld,policykit]
 	app-emulation/qemu[usbredir]
 	app-emulation/virt-manager[policykit]
