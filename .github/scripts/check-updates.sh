@@ -32,6 +32,7 @@ PKGS=(
   "dev-util/datagrip|DG||jetbrains"
   "app-misc/bcompare|bcompare||scooter"
   "app-admin/cockpit|cockpit-project/cockpit||github"
+  "app-admin/cockpit-machines|cockpit-project/cockpit-machines||github"
   "app-office/wps-office|wps-office-cn||aur"
   "app-misc/chatgpt-desktop|https://persistent.oaistatic.com/codex-app-prod/linux/deb/dists/stable/main/binary-amd64/Packages||openai-deb"
 )

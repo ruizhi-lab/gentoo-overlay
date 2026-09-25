@@ -92,13 +92,15 @@ explicitly requires otherwise.
 - Keep compatibility backports only on affected release ebuilds, and remove
   them when a later upstream release includes the fix.
 
-### cockpit
+### cockpit and cockpit-machines
 
-- Package location: `app-admin/cockpit`.
-- Follow upstream stable GitHub releases. Its release tags are already valid
-  Gentoo versions, so use the `github` update-check type without a version
-  prefix.
-- Preserve the Gentoo branding assets and PAM configuration under `files/`.
-- Keep optional integrations behind their USE flags, and ensure all required
-  account, service, and runtime dependencies are available from the configured
-  repository masters before claiming the package is buildable.
+- Package locations: `app-admin/cockpit` and `app-admin/cockpit-machines`.
+- Cockpit Machines is a Cockpit plugin and requires a matching or newer
+  `app-admin/cockpit` release (`>=cockpit-machines PV`).
+- Follow upstream stable GitHub releases. Release tags are valid Gentoo
+  versions, so use the `github` update-check type without a version prefix.
+- Preserve Cockpit's Gentoo branding assets and PAM configuration under
+  `app-admin/cockpit/files/`.
+- Keep optional Cockpit integrations behind their USE flags, and ensure all
+  required account, service, and runtime dependencies are available from the
+  configured repository masters before claiming the packages are buildable.
