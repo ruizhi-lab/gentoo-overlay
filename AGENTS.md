@@ -78,21 +78,27 @@ explicitly requires otherwise.
   `masters = gentoo`; do not change the repository's real
   `metadata/layout.conf`, which correctly declares `masters = gentoo guru`.
 
-## kwin-effects-glass
+## Package-specific notes
+
+### kwin-effects-glass
 
 - Package location: `kde-misc/kwin-effects-glass`.
 - Keep both a release ebuild and `kwin-effects-glass-9999.ebuild` tracking the
   upstream `main` branch.
-- Gentoo version `20260620.1` maps to upstream tag `20260620-1`.
-- Its update-check entry uses the `github-date-hyphen` type to normalize future
-  `YYYYMMDD-N` tags to Gentoo `YYYYMMDD.N` versions.
 - The package is Wayland-first. Its CMake switches are `GLASS_WAYLAND` and
   `GLASS_X11`; expose X11 with the Gentoo `X` USE flag.
 - KDecoration3 is provided by `kde-plasma/kdecoration`, not
   `kde-frameworks/kdecoration`.
-- The `20260620.1` release needs
-  `files/kwin-effects-glass-20260620-kwin-66.patch` for KWin 6.6. The live
-  ebuild must not apply it because upstream `main` already contains the fix.
-- The release and live ebuilds have both been fully built with
-  `USE="wayland -X"` in `docker-gentoo:latest`. Re-run full builds after changes
-  to dependencies, patches, CMake options, or version mappings.
+- Keep compatibility backports only on affected release ebuilds, and remove
+  them when a later upstream release includes the fix.
+
+### cockpit
+
+- Package location: `app-admin/cockpit`.
+- Follow upstream stable GitHub releases. Its release tags are already valid
+  Gentoo versions, so use the `github` update-check type without a version
+  prefix.
+- Preserve the Gentoo branding assets and PAM configuration under `files/`.
+- Keep optional integrations behind their USE flags, and ensure all required
+  account, service, and runtime dependencies are available from the configured
+  repository masters before claiming the package is buildable.
