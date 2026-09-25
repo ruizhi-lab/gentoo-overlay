@@ -13,6 +13,12 @@ SLOT="0"
 KEYWORDS="~amd64 ~x86"
 
 BDEPEND="sys-devel/gettext"
+# Fedora requires cockpit-bridge >= 215; Gentoo's cockpit package also ships
+# the bridge. Do not tie the plugin to a matching Cockpit release number.
+# libvirt-dbus is a separate service, not libvirt's own D-Bus build support.
+# Upstream can fall back to virsh, but Fedora makes libvirt-dbus a hard dep;
+# review this choice and the qemu/virt-manager USE mappings against Gentoo's
+# current virtualization packages when those packages are updated.
 RDEPEND="
 	>=app-admin/cockpit-215
 	>=app-emulation/libvirt-dbus-1.2.0
