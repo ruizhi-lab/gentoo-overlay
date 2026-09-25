@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<longdescription lang="en">Cockpit is an interactive server admin interface. It is easy to use and very lightweight. Cockpit interacts directly with the operating system from a real Linux session in a browser.</longdescription>
+	<maintainer type="person">
+		<name>Ruizhi Zhong</name>
+		<email>ruizhi.zhong88@gmail.com</email>
+	</maintainer>
+	<use>
+		<flag name="debug">Enable debug information.</flag>
+		<flag name="firewalld">Enable firewalld management support.</flag>
+		<flag name="pcp">Enable system performance and analysis support.</flag>
+		<flag name="tuned">Enable performance profile management support.</flag>
+	</use>
+	<upstream>
+		<remote-id type="github">cockpit-project/cockpit</remote-id>
+	</upstream>
+</pkgmetadata>
