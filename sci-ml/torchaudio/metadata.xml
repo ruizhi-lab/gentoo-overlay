@@ -9,4 +9,7 @@
 		<remote-id type="github">pytorch/audio</remote-id>
 		<remote-id type="pypi">torchaudio</remote-id>
 	</upstream>
+	<use>
+		<flag name="cuda">Build CUDA audio operators to match a CUDA-enabled PyTorch.</flag>
+	</use>
 </pkgmetadata>

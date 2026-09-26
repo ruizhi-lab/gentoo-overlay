@@ -18,11 +18,13 @@ S="${WORKDIR}/audio-${PV}"
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="~amd64"
+IUSE="cuda"
 
-# Upstream's 2.11 release supports PyTorch 2.11 and later. This package builds
-# only the CPU audio operators; the PyTorch install may use another backend.
+# Upstream's 2.11 release supports PyTorch 2.11 and later. CUDA operators can
+# be enabled when the selected PyTorch backend includes CUDA.
 RDEPEND="
-	>=sci-ml/pytorch-2.13[${PYTHON_SINGLE_USEDEP}]
+	>=sci-ml/pytorch-2.11[${PYTHON_SINGLE_USEDEP}]
+	cuda? ( >=sci-ml/pytorch-2.13[cuda,${PYTHON_SINGLE_USEDEP}] )
 	$(python_gen_cond_dep 'dev-python/numpy[${PYTHON_USEDEP}]')
 "
 DEPEND="${RDEPEND}"
@@ -31,7 +33,7 @@ DEPEND="${RDEPEND}"
 RESTRICT="test"
 
 python_compile() {
-	export USE_CUDA=0
+	export USE_CUDA=$(usex cuda 1 0)
 	export USE_ROCM=0
 	export BUILD_CUDA_CTC_DECODER=0
 

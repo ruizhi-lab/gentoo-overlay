@@ -50,7 +50,7 @@ RDEPEND="
 	)
 	cuda? (
 		>=sci-ml/pytorch-2.13[cuda,${PYTHON_SINGLE_USEDEP}]
-		sci-ml/torchaudio[${PYTHON_SINGLE_USEDEP}]
+		sci-ml/torchaudio[cuda,${PYTHON_SINGLE_USEDEP}]
 		sci-ml/torchvision[cuda,${PYTHON_SINGLE_USEDEP}]
 	)
 	rocm? (

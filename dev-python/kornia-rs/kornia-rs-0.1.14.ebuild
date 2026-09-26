@@ -14,7 +14,7 @@ MY_PN="kornia_rs"
 MY_BASE="https://files.pythonhosted.org/packages"
 AMD64_WHL_TAIL="manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
 
-DESCRIPTION="Low-level computer vision operations in Rust with PyO3 bindings"
+DESCRIPTION="Python bindings for Rust computer vision operations (prebuilt wheels)"
 HOMEPAGE="https://github.com/kornia/kornia-rs https://pypi.org/project/kornia-rs/"
 SRC_URI="
 	python_targets_python3_12? ( ${MY_BASE}/72/7f/01c9456a09a3a5731bf986724f6f6ff70d627ac8072cf298d842ec204692/${MY_PN}-${PV}-cp312-cp312-${AMD64_WHL_TAIL} )
@@ -26,7 +26,8 @@ S="${WORKDIR}"
 LICENSE="Apache-2.0"
 SLOT="0"
 KEYWORDS="~amd64"
-RESTRICT="bindist mirror strip"
+# Upstream publishes only Rust-compiled extension wheels for supported interpreters.
+RESTRICT="strip"
 
 QA_PREBUILT="usr/lib/python3.*/site-packages/kornia_rs/*"
 BDEPEND="dev-python/installer[${PYTHON_USEDEP}]"

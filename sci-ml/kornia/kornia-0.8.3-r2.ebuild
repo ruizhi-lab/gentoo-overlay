@@ -20,7 +20,7 @@ KEYWORDS="~amd64"
 RDEPEND="
 	sci-ml/pytorch[${PYTHON_SINGLE_USEDEP}]
 	$(python_gen_cond_dep '
-		>=dev-python/kornia-rs-bin-0.1.9[${PYTHON_USEDEP}]
+		>=dev-python/kornia-rs-0.1.9[${PYTHON_USEDEP}]
 		dev-python/packaging[${PYTHON_USEDEP}]
 	')
 "
