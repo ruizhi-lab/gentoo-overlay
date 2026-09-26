@@ -5,6 +5,7 @@
 #
 # Entry format: "category/package|source|version_prefix|type"
 #   type=github:    source is GitHub repo (e.g. "owner/repository")
+#   type=pypi:      source is the PyPI project name
 #   type=github-date-hyphen: GitHub tag YYYYMMDD-N maps to Gentoo YYYYMMDD.N
 #   type=jetbrains: source is JetBrains product code (e.g. "DG")
 #   type=scooter:   source is unused; scrapes scootersoftware.com kb/linux_install
@@ -28,6 +29,9 @@ PKGS=(
   "net-misc/xorgxrdp|neutrinolabs/xorgxrdp|v|github"
   "dev-python/kornia-rs|kornia/kornia-rs|v|github"
   "media-gfx/comfyui|Comfy-Org/ComfyUI|v|github"
+  "dev-python/comfyui-embedded-docs|comfyui-embedded-docs||pypi"
+  "dev-python/comfyui-frontend-package|comfyui-frontend-package||pypi"
+  "dev-python/comfyui-workflow-templates|comfyui-workflow-templates||pypi"
   "sci-ml/einops|arogozhnikov/einops|v|github"
   "sci-ml/kornia|kornia/kornia|v|github"
   "sci-ml/spandrel|chaiNNer-org/spandrel|v|github"
@@ -161,6 +165,32 @@ if stable:
 ' 2>/dev/null || echo ""
 }
 
+# Get the latest non-yanked, stable numeric release from the PyPI JSON API.
+# These ComfyUI asset projects publish their release versions on PyPI and use
+# plain numeric version components without upstream tag prefixes.
+get_pypi_latest() {
+  local project="$1"
+  curl ${CURL_OPTS} "https://pypi.org/pypi/${project}/json" 2>/dev/null \
+    | python3 -c '
+import json,sys,re
+try:
+    releases = json.load(sys.stdin).get("releases", {})
+except Exception:
+    sys.exit(0)
+
+stable = []
+for version, files in releases.items():
+    if not re.fullmatch(r"\d+(?:\.\d+)*", version):
+        continue
+    if not files or all(file.get("yanked", False) for file in files):
+        continue
+    stable.append((tuple(int(part) for part in version.split(".")), version))
+
+if stable:
+    print(max(stable)[1])
+' 2>/dev/null || echo ""
+}
+
 strip_prefix() {
   local ver="$1"
   [[ -n "$2" ]] && ver="${ver#"$2"}"
@@ -281,6 +311,10 @@ for entry in "${PKGS[@]}"; do
       latest=$(get_openai_deb_latest "$repo")
       [[ -z "$latest" ]] && continue
       ;;
+    pypi)
+      latest=$(get_pypi_latest "$repo")
+      [[ -z "$latest" || "$latest" == "null" ]] && continue
+      ;;
     github-date-hyphen)
       # Compare release tags in their upstream form so an equal release does
       # not look older than the Gentoo-normalized PV and trigger a tags
@@ -343,6 +377,9 @@ for entry in "${PKGS[@]}"; do
       ;;
     openai-deb)
       echo "UPDATE: ${pkg}: ${current} -> ${latest}  (${repo})"
+      ;;
+    pypi)
+      echo "UPDATE: ${pkg}: ${current} -> ${latest}  (https://pypi.org/project/${repo}/)"
       ;;
     *)
       echo "UPDATE: ${pkg}: ${current} -> ${latest}  (https://github.com/${repo}/tags)"
