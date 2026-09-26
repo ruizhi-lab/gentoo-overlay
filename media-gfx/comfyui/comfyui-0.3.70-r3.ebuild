@@ -72,7 +72,7 @@ src_install() {
 	#!/bin/sh
 	data_dir=\${XDG_DATA_HOME:-\${HOME}/.local/share}/comfyui
 	mkdir -p "\${data_dir}" || exit 1
-	exec ${EPYTHON} /usr/lib/${PN}/main.py --base-directory "\${data_dir}" "$@"
+	exec ${EPYTHON} /usr/lib/${PN}/main.py --base-directory "\${data_dir}" "\$@"
 	EOF_LAUNCHER
 	dobin "${T}/${PN}"
 }
