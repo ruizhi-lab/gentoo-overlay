@@ -52,6 +52,10 @@ RDEPEND="
 		sci-ml/torchaudio[${PYTHON_SINGLE_USEDEP}]
 		sci-ml/torchvision[${PYTHON_SINGLE_USEDEP}]
 	) )
+	$(python_gen_cond_dep '
+		>=dev-python/pydantic-2.0.0[${PYTHON_USEDEP}]
+		<dev-python/pydantic-3.0.0[${PYTHON_USEDEP}]
+	')
 	cuda? (
 		>=sci-ml/pytorch-2.13[cuda,${PYTHON_SINGLE_USEDEP}]
 		sci-ml/torchaudio[cuda,${PYTHON_SINGLE_USEDEP}]
@@ -66,8 +70,6 @@ RDEPEND="
 		sci-ml/kornia[${PYTHON_SINGLE_USEDEP}]
 		sci-ml/spandrel[${PYTHON_SINGLE_USEDEP}]
 		$(python_gen_cond_dep '
-			>=dev-python/pydantic-2.0.0[${PYTHON_USEDEP}]
-			<dev-python/pydantic-3.0.0[${PYTHON_USEDEP}]
 			>=dev-python/pydantic-settings-2.0.0[${PYTHON_USEDEP}]
 			<dev-python/pydantic-settings-3.0.0[${PYTHON_USEDEP}]
 			>=dev-python/pyopengl-3.1.8[${PYTHON_USEDEP}]
