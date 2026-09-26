@@ -80,6 +80,19 @@ explicitly requires otherwise.
 
 ## Package-specific notes
 
+### ComfyUI
+
+- Package location: `media-gfx/comfyui`; its bundled runtime assets are packaged
+  as `dev-python/comfyui-embedded-docs`,
+  `dev-python/comfyui-frontend-package`, and
+  `dev-python/comfyui-workflow-templates`.
+- Keep those asset package versions aligned with the exact pins in the matching
+  ComfyUI release's upstream `requirements.txt`. Do not bump them independently
+  to their newest PyPI versions; update the pins together when bumping ComfyUI.
+- The PyPI entries in `.github/scripts/check-updates.sh` are informational for
+  release tracking. A newer asset release alone does not justify changing its
+  ebuild while ComfyUI still pins the current version.
+
 ### kwin-effects-glass
 
 - Package location: `kde-misc/kwin-effects-glass`.

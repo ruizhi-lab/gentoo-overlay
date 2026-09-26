@@ -29,6 +29,8 @@ PKGS=(
   "net-misc/xorgxrdp|neutrinolabs/xorgxrdp|v|github"
   "dev-python/kornia-rs|kornia/kornia-rs|v|github"
   "media-gfx/comfyui|Comfy-Org/ComfyUI|v|github"
+  # Track PyPI latest for visibility only: these assets follow the exact pins
+  # from the matching ComfyUI release's requirements.txt, not standalone bumps.
   "dev-python/comfyui-embedded-docs|comfyui-embedded-docs||pypi"
   "dev-python/comfyui-frontend-package|comfyui-frontend-package||pypi"
   "dev-python/comfyui-workflow-templates|comfyui-workflow-templates||pypi"
