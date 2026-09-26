@@ -92,6 +92,16 @@ explicitly requires otherwise.
 - The PyPI entries in `.github/scripts/check-updates.sh` are informational for
   release tracking. A newer asset release alone does not justify changing its
   ebuild while ComfyUI still pins the current version.
+- `comfy-kitchen` and `comfy-aimdo` are also exact-pinned runtime dependencies
+  in current ComfyUI releases. Keep their ebuilds aligned with the matching
+  `requirements.txt`; build them from upstream sources, not published wheels.
+  Include upstream submodule revisions as explicit distfiles so builds do not
+  fetch code dynamically. Forward ComfyUI's CUDA/ROCm USE selection to
+  `comfy-kitchen`.
+- `comfy-angle` appears in the upstream non-essential dependencies list. Do not
+  make it a hard dependency; its upstream build retrieves Chromium ANGLE and
+  depot-tools sources dynamically, so package it separately only after those
+  inputs can be pinned and built offline.
 
 ### kwin-effects-glass
 

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>ruizhi.zhong88@gmail.com</email>
+		<name>Ruizhi Zhong</name>
+	</maintainer>
+	<upstream>
+		<remote-id type="github">Comfy-Org/comfy-kitchen</remote-id>
+		<remote-id type="pypi">comfy-kitchen</remote-id>
+	</upstream>
+	<use>
+		<flag name="cuda">Build NVIDIA CUDA kernels</flag>
+		<flag name="rocm">Build AMD ROCm/HIP kernels</flag>
+	</use>
+</pkgmetadata>

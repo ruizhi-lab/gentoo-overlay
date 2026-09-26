@@ -1,0 +1,15 @@
+From: Ruizhi Zhong <ruizhi.zhong88@gmail.com>
+Date: 2026-09-26
+Subject: [PATCH] respect linker flags when building native backends
+Upstream-Status: Pending
+
+Pass Gentoo's linker flags to both native extension links.
+
+--- a/scripts/build-linux-aimdo.sh
++++ b/scripts/build-linux-aimdo.sh
+@@ -94 +94 @@
+-gcc -shared -o "$CUDA_OUTPUT_PATH" -fPIC -O2 -g -pthread \
++gcc -shared -o "$CUDA_OUTPUT_PATH" -fPIC -O2 -g -pthread ${LDFLAGS:-} \
+@@ -103 +103 @@
+-gcc -shared -o "$ROCM_OUTPUT_PATH" -fPIC -O2 -g -pthread \
++gcc -shared -o "$ROCM_OUTPUT_PATH" -fPIC -O2 -g -pthread ${LDFLAGS:-} \

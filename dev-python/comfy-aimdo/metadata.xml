@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>ruizhi.zhong88@gmail.com</email>
+		<name>Ruizhi Zhong</name>
+	</maintainer>
+	<upstream>
+		<remote-id type="github">Comfy-Org/comfy-aimdo</remote-id>
+		<remote-id type="pypi">comfy-aimdo</remote-id>
+	</upstream>
+</pkgmetadata>

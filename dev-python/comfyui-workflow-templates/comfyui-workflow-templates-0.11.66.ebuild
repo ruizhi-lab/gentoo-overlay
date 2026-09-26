@@ -11,7 +11,7 @@ inherit distutils-r1
 
 DESCRIPTION="Example workflow templates for ComfyUI"
 HOMEPAGE="https://github.com/Comfy-Org/workflow_templates https://pypi.org/project/comfyui-workflow-templates/"
-SRC_URI="https://files.pythonhosted.org/packages/4d/d9/caa0f8a1b94e33c7a6a51a47f22f50b25bc1c506c4551df4468b3f9595fe/comfyui_workflow_templates-0.2.11.tar.gz -> ${P}.tar.gz"
+SRC_URI="https://files.pythonhosted.org/packages/99/75/93a93180734d4d9b3c61d382df6ffbc7b2cb3d63dd38393877d22f284a45/comfyui_workflow_templates-0.11.66.tar.gz -> ${P}.tar.gz"
 S="${WORKDIR}/${PN//-/_}-${PV}"
 
 LICENSE="MIT"

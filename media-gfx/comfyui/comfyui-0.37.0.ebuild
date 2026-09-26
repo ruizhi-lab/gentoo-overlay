@@ -19,29 +19,33 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE} ?? ( cuda rocm )"
 
 RDEPEND="
 	${PYTHON_DEPS}
-	~dev-python/comfyui-embedded-docs-0.3.1[${PYTHON_SINGLE_USEDEP}]
-	~dev-python/comfyui-frontend-package-1.28.8[${PYTHON_SINGLE_USEDEP}]
-	~dev-python/comfyui-workflow-templates-0.2.11[${PYTHON_SINGLE_USEDEP}]
-	sci-ml/tokenizers[${PYTHON_SINGLE_USEDEP}]
+	~dev-python/comfyui-embedded-docs-0.5.12[${PYTHON_SINGLE_USEDEP}]
+	~dev-python/comfyui-frontend-package-1.52.7[${PYTHON_SINGLE_USEDEP}]
+	~dev-python/comfyui-workflow-templates-0.11.66[${PYTHON_SINGLE_USEDEP}]
+	~dev-python/comfy-aimdo-0.5.5[${PYTHON_SINGLE_USEDEP}]
+	~dev-python/comfy-kitchen-0.2.35[cuda?,rocm?,${PYTHON_SINGLE_USEDEP}]
+	>=sci-ml/tokenizers-0.13.3[${PYTHON_SINGLE_USEDEP}]
 	sci-ml/torchsde[${PYTHON_SINGLE_USEDEP}]
-	sci-ml/transformers[${PYTHON_SINGLE_USEDEP}]
+	>=sci-ml/transformers-4.50.3[${PYTHON_SINGLE_USEDEP}]
 	$(python_gen_cond_dep '
 		dev-python/alembic[${PYTHON_USEDEP}]
-		dev-python/aiohttp[${PYTHON_USEDEP}]
-		>=dev-python/av-14.2.0[${PYTHON_USEDEP}]
+		>=dev-python/aiohttp-3.11.8[${PYTHON_USEDEP}]
+		>=dev-python/av-17.0.0[${PYTHON_USEDEP}]
 		sci-ml/einops[${PYTHON_USEDEP}]
-		dev-python/numpy[${PYTHON_USEDEP}]
+		>=dev-python/numpy-1.25.0[${PYTHON_USEDEP}]
 		dev-python/psutil[${PYTHON_USEDEP}]
 		dev-python/pillow[${PYTHON_USEDEP}]
 		dev-python/pyyaml[${PYTHON_USEDEP}]
-		sci-ml/safetensors[${PYTHON_USEDEP}]
+		>=sci-ml/safetensors-0.4.2[${PYTHON_USEDEP}]
 		dev-python/scipy[${PYTHON_USEDEP}]
 		sci-ml/sentencepiece[${PYTHON_USEDEP}]
-		dev-python/sqlalchemy[${PYTHON_USEDEP}]
+		>=dev-python/sqlalchemy-2.0.0[${PYTHON_USEDEP}]
 		dev-python/tqdm[${PYTHON_USEDEP}]
-		dev-python/yarl[${PYTHON_USEDEP}]
-		dev-python/pydantic[${PYTHON_USEDEP}]
-		dev-python/pydantic-settings[${PYTHON_USEDEP}]
+		>=dev-python/yarl-1.18.0[${PYTHON_USEDEP}]
+		dev-python/filelock[${PYTHON_USEDEP}]
+		dev-python/requests[${PYTHON_USEDEP}]
+		>=dev-python/simpleeval-1.0.0[${PYTHON_USEDEP}]
+		dev-python/blake3[${PYTHON_USEDEP}]
 	')
 	!cuda? ( !rocm? (
 		>=sci-ml/pytorch-2.12.0[${PYTHON_SINGLE_USEDEP}]
@@ -61,6 +65,13 @@ RDEPEND="
 	optional? (
 		sci-ml/kornia[${PYTHON_SINGLE_USEDEP}]
 		sci-ml/spandrel[${PYTHON_SINGLE_USEDEP}]
+		$(python_gen_cond_dep '
+			>=dev-python/pydantic-2.0.0[${PYTHON_USEDEP}]
+			<dev-python/pydantic-3.0.0[${PYTHON_USEDEP}]
+			>=dev-python/pydantic-settings-2.0.0[${PYTHON_USEDEP}]
+			<dev-python/pydantic-settings-3.0.0[${PYTHON_USEDEP}]
+			>=dev-python/pyopengl-3.1.8[${PYTHON_USEDEP}]
+		')
 	)
 "
 
