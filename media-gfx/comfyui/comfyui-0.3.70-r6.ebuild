@@ -28,7 +28,7 @@ RDEPEND="
 	$(python_gen_cond_dep '
 		dev-python/alembic[${PYTHON_USEDEP}]
 		dev-python/aiohttp[${PYTHON_USEDEP}]
-		dev-python/av[${PYTHON_USEDEP}]
+		>=dev-python/av-14.2.0[${PYTHON_USEDEP}]
 		sci-ml/einops[${PYTHON_USEDEP}]
 		dev-python/numpy[${PYTHON_USEDEP}]
 		dev-python/psutil[${PYTHON_USEDEP}]

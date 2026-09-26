@@ -27,7 +27,6 @@ PKGS=(
   "net-proxy/v2rayn-bin|2dust/v2rayN||github"
   "net-misc/xorgxrdp|neutrinolabs/xorgxrdp|v|github"
   "dev-python/kornia-rs|kornia/kornia-rs|v|github"
-  "dev-python/av|PyAV-Org/PyAV|v|github"
   "media-gfx/comfyui|Comfy-Org/ComfyUI|v|github"
   "sci-ml/einops|arogozhnikov/einops|v|github"
   "sci-ml/kornia|kornia/kornia|v|github"
