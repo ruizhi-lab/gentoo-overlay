@@ -14,8 +14,8 @@ S="${WORKDIR}/ComfyUI-${PV}"
 LICENSE="GPL-3"
 SLOT="0"
 KEYWORDS="~amd64"
-IUSE="+cpu cuda rocm optional"
-REQUIRED_USE="${PYTHON_REQUIRED_USE} ^^ ( cpu cuda rocm )"
+IUSE="cuda rocm optional"
+REQUIRED_USE="${PYTHON_REQUIRED_USE} ?? ( cuda rocm )"
 
 RDEPEND="
 	${PYTHON_DEPS}
@@ -43,11 +43,11 @@ RDEPEND="
 		dev-python/pydantic[${PYTHON_USEDEP}]
 		dev-python/pydantic-settings[${PYTHON_USEDEP}]
 	')
-	cpu? (
+	!cuda? ( !rocm? (
 		>=sci-ml/pytorch-2.12.0[${PYTHON_SINGLE_USEDEP}]
 		sci-ml/torchaudio[${PYTHON_SINGLE_USEDEP}]
 		sci-ml/torchvision[${PYTHON_SINGLE_USEDEP}]
-	)
+	) )
 	cuda? (
 		>=sci-ml/pytorch-2.13[cuda,${PYTHON_SINGLE_USEDEP}]
 		sci-ml/torchaudio[cuda,${PYTHON_SINGLE_USEDEP}]

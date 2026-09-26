@@ -9,9 +9,8 @@
 		<remote-id type="github">Comfy-Org/ComfyUI</remote-id>
 	</upstream>
 	<use>
-		<flag name="cpu">Use the CPU PyTorch backend.</flag>
 		<flag name="optional">Install upstream non-essential Python features.</flag>
-		<flag name="cuda">Use CUDA-enabled PyTorch, torchvision and torchaudio operators.</flag>
-		<flag name="rocm">Use the ROCm-enabled PyTorch backend.</flag>
+		<flag name="cuda">Use CUDA-enabled PyTorch, torchvision and torchaudio operators; CPU is the default when neither GPU flag is enabled.</flag>
+		<flag name="rocm">Use the ROCm-enabled PyTorch backend; CPU is the default when neither GPU flag is enabled.</flag>
 	</use>
 </pkgmetadata>
