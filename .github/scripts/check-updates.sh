@@ -31,6 +31,7 @@ PKGS=(
   "net-misc/baidunetdisk|net-misc/baidunetdisk||gentoozh"
   "dev-util/datagrip|DG||jetbrains"
   "app-misc/bcompare|bcompare||scooter"
+  "sci-ml/comfyui|Comfy-Org/ComfyUI|v|github"
   "app-admin/cockpit|cockpit-project/cockpit||github"
   "app-admin/cockpit-machines|cockpit-project/cockpit-machines||github"
   "app-office/wps-office|wps-office-cn||aur"

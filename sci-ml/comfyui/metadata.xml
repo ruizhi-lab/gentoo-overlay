@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<name>Ruizhi Zhong</name>
+		<email>ruizhi.zhong88@gmail.com</email>
+	</maintainer>
+	<upstream>
+		<remote-id type="github">Comfy-Org/ComfyUI</remote-id>
+	</upstream>
+	<use>
+		<flag name="cpu">Use the CPU-only PyTorch backend.</flag>
+		<flag name="optional">Install upstream non-essential Python features.</flag>
+		<flag name="cuda">Use the CUDA-enabled PyTorch backend.</flag>
+		<flag name="rocm">Use the ROCm-enabled PyTorch backend.</flag>
+	</use>
+</pkgmetadata>
