@@ -3,17 +3,19 @@
 
 EAPI=8
 
-inherit cmake cuda git-r3 toolchain-funcs
+inherit cmake cuda toolchain-funcs
 
-DESCRIPTION="llama.cpp fork with Prism-ML Bonsai 1-bit model support"
-HOMEPAGE="https://github.com/Mintplex-Labs/prism-ml-llama.cpp"
-EGIT_REPO_URI="${HOMEPAGE}.git"
-EGIT_BRANCH="prism"
+PRISM_TAG="prism-b${PV}-adfffbe"
+PRISM_COMMIT="adfffbe"
+
+DESCRIPTION="PrismML llama.cpp fork with Bonsai low-bit model support"
+HOMEPAGE="https://github.com/PrismML-Eng/llama.cpp"
+SRC_URI="https://github.com/PrismML-Eng/llama.cpp/archive/refs/tags/${PRISM_TAG}.tar.gz -> ${P}.tar.gz"
+S="${WORKDIR}/llama.cpp-${PRISM_TAG}"
 
 LICENSE="MIT"
 SLOT="0"
-KEYWORDS=""
-PROPERTIES="live"
+KEYWORDS="~amd64"
 IUSE="cuda curl openmp openssl vulkan"
 
 RDEPEND="
@@ -37,6 +39,7 @@ BDEPEND="
 pkg_pretend() {
 	use openmp && tc-check-openmp
 }
+
 pkg_setup() {
 	use openmp && tc-check-openmp
 }
@@ -48,14 +51,20 @@ src_prepare() {
 
 src_configure() {
 	local mycmakeargs=(
+		-DLLAMA_BUILD_IS_DEV=OFF
 		-DLLAMA_BUILD_TESTS=OFF
 		-DLLAMA_BUILD_EXAMPLES=OFF
 		-DLLAMA_BUILD_SERVER=ON
-		-DLLAMA_BUILD_WEBUI=OFF
+		-DLLAMA_BUILD_UI=OFF
+		-DLLAMA_USE_PREBUILT_UI=OFF
 		-DLLAMA_TESTS_INSTALL=OFF
+		-DLLAMA_BUILD_NUMBER="${PV}"
+		-DLLAMA_BUILD_COMMIT="${PRISM_COMMIT}"
+		-DBUILD_NUMBER="${PV}"
 		-DLLAMA_CURL=$(usex curl)
 		-DLLAMA_OPENSSL=$(usex openssl)
 		-DGGML_NATIVE=OFF
+		-DGGML_CCACHE=OFF
 		-DGGML_CUDA=$(usex cuda)
 		-DGGML_OPENMP=$(usex openmp)
 		-DGGML_RPC=ON
@@ -79,7 +88,9 @@ src_install() {
 	cmake_src_install
 
 	local tool
-	for tool in llama-cli llama-server; do
-		dosym -r "/usr/libexec/${PN}/${tool}" "/usr/bin/prism-${tool}"
+	for tool in llama llama-cli llama-server; do
+		if [[ -x ${ED}/usr/libexec/${PN}/${tool} ]]; then
+			dosym -r "/usr/libexec/${PN}/${tool}" "/usr/bin/prism-${tool}"
+		fi
 	done
 }

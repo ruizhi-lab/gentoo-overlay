@@ -10,6 +10,6 @@
 		<flag name="openssl">Enable HTTPS support</flag>
 	</use>
 	<upstream>
-		<remote-id type="github">Mintplex-Labs/prism-ml-llama.cpp</remote-id>
+		<remote-id type="github">PrismML-Eng/llama.cpp</remote-id>
 	</upstream>
 </pkgmetadata>

@@ -7,6 +7,7 @@
 #   type=github:    source is GitHub repo (e.g. "owner/repository")
 #   type=pypi:      source is the PyPI project name
 #   type=github-date-hyphen: GitHub tag YYYYMMDD-N maps to Gentoo YYYYMMDD.N
+#   type=github-prism-build: Prism tag prism-bN-<commit> maps to Gentoo N
 #   type=jetbrains: source is JetBrains product code (e.g. "DG")
 #   type=scooter:   source is unused; scrapes scootersoftware.com kb/linux_install
 #   type=aur:       source is AUR package name (e.g. "wps-office-cn")
@@ -56,6 +57,7 @@ PKGS=(
   "app-misc/bcompare|bcompare||scooter"
   "app-admin/cockpit|cockpit-project/cockpit||github"
   "app-admin/cockpit-machines|cockpit-project/cockpit-machines||github"
+  "sci-misc/prism-llama-cpp|PrismML-Eng/llama.cpp||github-prism-build"
   "app-office/wps-office|wps-office-cn||aur"
   "app-misc/chatgpt-desktop|https://persistent.oaistatic.com/codex-app-prod/linux/deb/dists/stable/main/binary-amd64/Packages||openai-deb"
 )
@@ -335,14 +337,27 @@ for entry in "${PKGS[@]}"; do
       latest=$(get_latest_stable "$repo" "$current_tag")
       [[ -z "$latest" || "$latest" == "null" ]] && continue
       ;;
+    github-prism-build)
+      latest=$(get_latest_stable "$repo" "$current")
+      [[ -z "$latest" || "$latest" == "null" ]] && continue
+      ;;
     *)
       latest=$(get_latest_stable "$repo" "$current")
       [[ -z "$latest" || "$latest" == "null" ]] && continue
       ;;
   esac
 
-  cur=$(strip_prefix "$current" "$prefix")
-  lat=$(strip_prefix "$latest" "$prefix")
+  if [[ "${type:-github}" == "github-prism-build" ]]; then
+    cur="$current"
+    if [[ "$latest" =~ ^prism-b([0-9]+)-[[:xdigit:]]+$ ]]; then
+      lat="${BASH_REMATCH[1]}"
+    else
+      continue
+    fi
+  else
+    cur=$(strip_prefix "$current" "$prefix")
+    lat=$(strip_prefix "$latest" "$prefix")
+  fi
 
   # Gentoo versions cannot represent an upstream release counter with a
   # hyphen because that syntax is reserved for ebuild revisions. Map tags such
