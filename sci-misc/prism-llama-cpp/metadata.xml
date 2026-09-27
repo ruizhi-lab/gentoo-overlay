@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>ruizhi.zhong88@gmail.com</email>
+		<name>Ruizhi Zhong</name>
+	</maintainer>
+	<use>
+		<flag name="curl">Enable model downloads from Hugging Face</flag>
+		<flag name="openssl">Enable HTTPS support</flag>
+	</use>
+	<upstream>
+		<remote-id type="github">Mintplex-Labs/prism-ml-llama.cpp</remote-id>
+	</upstream>
+</pkgmetadata>
