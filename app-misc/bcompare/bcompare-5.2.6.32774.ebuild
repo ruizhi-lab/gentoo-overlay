@@ -9,7 +9,7 @@ DESCRIPTION="Compare, merge files and folders using simple, powerful commands"
 HOMEPAGE="https://www.scootersoftware.com"
 SRC_URI="
 	https://www.scootersoftware.com/${P}.x86_64.tar.gz
-	https://www.7-zip.org/a/7z2601-src.tar.xz
+	https://www.7-zip.org/a/7z2603-src.tar.xz
 "
 
 # Bcompare is the Scooter Software EULA; LGPL-2 covers lib7z.so built from the
@@ -52,7 +52,7 @@ BDEPEND="
 
 src_unpack() {
 	unpack ${P}.x86_64.tar.gz
-	unpack 7z2601-src.tar.xz
+	unpack 7z2603-src.tar.xz
 }
 
 src_prepare() {

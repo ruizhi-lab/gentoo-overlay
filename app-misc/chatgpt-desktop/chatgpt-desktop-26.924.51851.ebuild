@@ -35,9 +35,10 @@ RDEPEND="
 	dev-libs/nspr
 	dev-libs/nss
 	dev-libs/openssl:=
+	>=media-libs/libcanberra-0.30
 	media-libs/alsa-lib
 	media-libs/libglvnd
-	media-libs/mesa[gbm(+)]
+	media-libs/mesa[gbm(+),vulkan]
 	net-print/cups
 	sys-apps/dbus
 	sys-libs/glibc
