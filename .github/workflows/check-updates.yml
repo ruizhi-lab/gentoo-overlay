@@ -3,6 +3,7 @@ name: Check upstream updates
 on:
   schedule:
     - cron: '37 8 * * 2'  # every Tuesday at 08:37 UTC
+    - cron: '23 14 * * 5' # Friday fallback if GitHub drops the Tuesday event
   workflow_dispatch:       # allow manual trigger
 
 permissions:
@@ -21,30 +22,39 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           chmod +x .github/scripts/check-updates.sh
-          RAW=$(.github/scripts/check-updates.sh 2>&1) || true
-          echo "output<<EOF" >> $GITHUB_OUTPUT
-          echo "${RAW}" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-          JSON=$(.github/scripts/check-updates.sh --json 2>&1) || true
+          set +e
+          RAW=$(.github/scripts/check-updates.sh 2>&1)
+          STATUS=$?
+          set -e
+
+          printf '%s\n' "${RAW}"
+          UPDATE_COUNT=$(printf '%s\n' "${RAW}" | awk '/^UPDATE: / { count++ } END { print count + 0 }')
+          if [ "${STATUS}" -ne "${UPDATE_COUNT}" ]; then
+            echo "::error::Update checker exited with status ${STATUS} after reporting ${UPDATE_COUNT} updates."
+            exit 1
+          fi
+
+          DELIMITER="EOF_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_${RANDOM}"
           {
-            echo "json<<EOF"
-            echo "${JSON}"
-            echo "EOF"
-          } >> $GITHUB_OUTPUT
+            echo "output<<${DELIMITER}"
+            printf '%s\n' "${RAW}"
+            echo "${DELIMITER}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Create issue if updates found
         if: steps.check.outputs.output != ''
         uses: actions/github-script@v7
         with:
+          # Pass the multiline output through the environment to avoid embedding
+          # upstream tag text directly into JavaScript source.
           script: |
-            const output = `${{ steps.check.outputs.output }}`;
+            const output = process.env.UPDATE_REPORT;
             const updateCount = output.split('\n')
               .filter(line => line.startsWith('UPDATE: ')).length;
             const title = `📦 ${updateCount} package(s) have upstream updates`;
             const body = '## Upstream updates detected\n\n```\n' + output + '\n```\n\n'
               + 'Please bump the ebuilds accordingly.';
 
-            // Check if an open issue with same title already exists
             const { data: issues } = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -57,8 +67,10 @@ jobs:
               await github.rest.issues.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                title: title,
-                body: body,
+                title,
+                body,
                 labels: ['updates'],
               });
             }
+        env:
+          UPDATE_REPORT: ${{ steps.check.outputs.output }}
