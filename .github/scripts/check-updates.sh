@@ -59,6 +59,7 @@ PKGS=(
   "app-admin/cockpit|cockpit-project/cockpit||github"
   "app-admin/cockpit-machines|cockpit-project/cockpit-machines||github"
   "sci-misc/prism-llama-cpp|PrismML-Eng/llama.cpp||github-prism-build"
+  "sci-misc/kvmem-llama-cpp|kvmem/kvmem-llama.cpp|v|github"
   "app-office/wps-office|wps-office-cn||aur"
   "app-misc/chatgpt-desktop|https://persistent.oaistatic.com/codex-app-prod/linux/deb/dists/stable/main/binary-amd64/Packages||openai-deb"
   "app-misc/claude-desktop|https://downloads.claude.ai/claude-desktop/apt/stable/dists/stable/main/binary-amd64/Packages||claude-deb"

@@ -1,0 +1,20 @@
+From: Ruizhi Zhong <ruizhi.zhong88@gmail.com>
+Date: Fri, 2 Oct 2026 00:15:00 +0800
+Subject: [PATCH] cmake: accept externally supplied CXXFLAGS
+
+Gentoo's cmake.eclass clears CMAKE_CXX_FLAGS_RELEASE and supplies the user's
+optimization flags through CMAKE_CXX_FLAGS. Only diagnose an empty flag set
+when both variables are empty, preserving the upstream guard for a poisoned
+compiler configuration without rejecting Gentoo's deliberate setup.
+
+Upstream-Status: Not submitted (Gentoo-specific flag handling)
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -8,6 +8,7 @@
+ # build still succeeds, and inference runs roughly 400x slower because nothing
+ # -- including the HIP device code -- is compiled with -O3. Fail loudly instead.
+ if (CMAKE_BUILD_TYPE STREQUAL "Release" AND CMAKE_CXX_FLAGS_RELEASE STREQUAL ""
++        AND CMAKE_CXX_FLAGS STREQUAL ""
+         AND CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+     message(FATAL_ERROR
+         "CMAKE_BUILD_TYPE=Release but CMAKE_CXX_FLAGS_RELEASE is empty, so this "

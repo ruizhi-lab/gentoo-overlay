@@ -1,0 +1,24 @@
+This package builds the CUDA runtime, without model weights or the npm web UI.
+Use an OpenAI-compatible client with llama-kvmem-server.
+The patched llama/ggml libraries are statically linked into the two tools, so
+this package can coexist with sci-misc/llama-cpp and prism-llama-cpp.
+
+For RTX 5080, select the architecture in /etc/portage/env/kvmem-llama-cpp:
+    CMAKE_CUDA_ARCHITECTURES="120a-real"
+and add to /etc/portage/package.env:
+    sci-misc/kvmem-llama-cpp kvmem-llama-cpp
+
+Download Qwen3.8-27B-GSQ-RCO-IQ3_S-mtp.gguf separately from:
+https://huggingface.co/ISTA-DASLab/Qwen3.8-27B-GSQ-RCO-GGUF
+
+The upstream 16 GiB IQ3 recipe uses a bounded GPU KV working set with a
+256K logical context. Historical KV is stored in system RAM. Start with:
+    llama-kvmem-server -m /path/to/Qwen3.8-27B-GSQ-RCO-IQ3_S-mtp.gguf \
+        --host 127.0.0.1 --port 18200 -c 262144 --gpu-layers all \
+        --kvmem-budget 36864 --kvmem-gen-reserve 16384 \
+        -ctk q8_0 -ctv q8_0 --spec-type draft-mtp --no-ui
+
+Check the upstream README for current sampling and memory settings. A single
+generation, including reasoning, must fit --kvmem-gen-reserve. Model inference
+correctness must be checked after changing the CUDA compiler; a successful
+build alone does not validate IQ3 output.
