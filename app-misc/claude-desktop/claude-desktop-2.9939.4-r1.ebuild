@@ -25,10 +25,6 @@ KEYWORDS="-* ~amd64 ~arm64"
 RESTRICT="bindist mirror strip"
 
 RDEPEND="
-	|| (
-		sys-apps/systemd
-		sys-apps/systemd-utils
-	)
 	>=app-accessibility/at-spi2-core-2.46.0:2
 	app-crypt/libsecret[crypt]
 	app-misc/ca-certificates
@@ -43,6 +39,7 @@ RDEPEND="
 	sys-apps/xdg-desktop-portal
 	sys-libs/libcap-ng
 	sys-libs/libseccomp
+	virtual/libudev
 	x11-libs/cairo
 	x11-libs/gtk+:3
 	x11-libs/libdrm
@@ -82,5 +79,5 @@ pkg_postinst() {
 	elog "~/.claude is shared with Claude Code, so signing in may update its login state."
 
 	optfeature "secret/keyring storage" virtual/secret-service
-	optfeature "Cowork sandboxed VM support" app-emulation/qemu
+	optfeature "Cowork sandboxed VM support" app-emulation/qemu sys-firmware/edk2-bin
 }
