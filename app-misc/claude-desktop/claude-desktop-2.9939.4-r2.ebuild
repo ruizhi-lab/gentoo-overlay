@@ -66,7 +66,7 @@ src_install() {
 	fperms 4755 "/opt/${PN}/chrome-sandbox"
 	pax-mark m "${ED}/opt/${PN}/claude-desktop"
 
-	dosym -r "/opt/${PN}/claude-desktop" /usr/bin/claude-desktop
+	dobin "${FILESDIR}/claude-desktop"
 
 	domenu usr/share/applications/com.anthropic.Claude.desktop
 	insinto /usr/share/icons
