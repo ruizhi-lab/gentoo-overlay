@@ -12,6 +12,7 @@
 #   type=scooter:   source is unused; scrapes scootersoftware.com kb/linux_install
 #   type=aur:       source is AUR package name (e.g. "wps-office-cn")
 #   type=openai-deb: source is the OpenAI Debian Packages index
+#   type=claude-deb: source is the Claude Desktop Debian Packages index
 
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -60,6 +61,7 @@ PKGS=(
   "sci-misc/prism-llama-cpp|PrismML-Eng/llama.cpp||github-prism-build"
   "app-office/wps-office|wps-office-cn||aur"
   "app-misc/chatgpt-desktop|https://persistent.oaistatic.com/codex-app-prod/linux/deb/dists/stable/main/binary-amd64/Packages||openai-deb"
+  "app-misc/claude-desktop|https://downloads.claude.ai/claude-desktop/apt/stable/dists/stable/main/binary-amd64/Packages||claude-deb"
 )
 
 GH_API="${GITHUB_API_URL:-https://api.github.com}"
@@ -296,6 +298,13 @@ get_openai_deb_latest() {
     | awk '/^Package: chatgpt$/{found=1; next} found && /^Version:/{print $2; exit} found && /^Package:/{exit}'
 }
 
+# Claude's Packages index retains older releases, so select the highest version.
+get_claude_deb_latest() {
+  curl ${CURL_OPTS} "$1" 2>/dev/null \
+    | awk '/^Package: claude-desktop$/{found=1; next} found && /^Version:/{print $2; found=0}' \
+    | sort -V | tail -1
+}
+
 updates_found=0
 
 for entry in "${PKGS[@]}"; do
@@ -323,6 +332,10 @@ for entry in "${PKGS[@]}"; do
       ;;
     openai-deb)
       latest=$(get_openai_deb_latest "$repo")
+      [[ -z "$latest" ]] && continue
+      ;;
+    claude-deb)
+      latest=$(get_claude_deb_latest "$repo")
       [[ -z "$latest" ]] && continue
       ;;
     pypi)
