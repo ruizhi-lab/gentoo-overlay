@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<name>Ruizhi Zhong</name>
+		<email>ruizhi.zhong88@gmail.com</email>
+	</maintainer>
+	<use>
+		<flag name="hardlink">Hardlink identical icon files to reduce disk usage</flag>
+		<flag name="kde">Install KDE Plasma folder color variants</flag>
+		<flag name="minimal">Install only the standard color variant</flag>
+	</use>
+	<upstream>
+		<remote-id type="github">vinceliuice/Tela-icon-theme</remote-id>
+	</upstream>
+</pkgmetadata>

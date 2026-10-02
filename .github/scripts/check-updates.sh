@@ -26,6 +26,7 @@ PKGS=(
   "media-fonts/sarasa-gothic|be5invis/Sarasa-Gothic|v|github"
   "media-fonts/sarasa-term-sc-nerd|laishulu/Sarasa-Term-SC-Nerd|v|github"
   "media-sound/yesplaymusic-bin|qier222/YesPlayMusic|v|github"
+  "x11-themes/tela-icon-theme|vinceliuice/Tela-icon-theme||github-date-iso"
   "net-misc/xrdp|neutrinolabs/xrdp|v|github"
   "net-proxy/v2rayn-bin|2dust/v2rayN||github"
   "net-misc/xorgxrdp|neutrinolabs/xorgxrdp|v|github"
@@ -355,6 +356,12 @@ for entry in "${PKGS[@]}"; do
       latest=$(get_latest_stable "$repo" "$current")
       [[ -z "$latest" || "$latest" == "null" ]] && continue
       ;;
+    github-date-iso)
+      # The current PV is YYYYMMDD but the release tag is YYYY-MM-DD; avoid
+      # the helper's generic current-version fallback comparison here.
+      latest=$(get_latest_stable "$repo")
+      [[ -z "$latest" || "$latest" == "null" ]] && continue
+      ;;
     *)
       latest=$(get_latest_stable "$repo" "$current")
       [[ -z "$latest" || "$latest" == "null" ]] && continue
@@ -378,6 +385,11 @@ for entry in "${PKGS[@]}"; do
   # as 20260620-1 to the corresponding Gentoo PV 20260620.1 for comparison.
   if [[ "${type:-github}" == "github-date-hyphen" ]]; then
     lat="${lat/-/.}"
+  fi
+
+  # Upstream tags use YYYY-MM-DD while the ebuild PV uses Gentoo's YYYYMMDD.
+  if [[ "${type:-github}" == "github-date-iso" ]]; then
+    lat="${lat//-/}"
   fi
 
   # Report only when upstream is strictly newer. Sources can lag behind
