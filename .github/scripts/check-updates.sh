@@ -19,7 +19,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 OVERLAY_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
 PKGS=(
-  "app-text/goldendict-ng|xiaoyifang/goldendict-ng|v|github"
+  "app-text/goldendict-ng|xiaoyifang/goldendict-ng||github-goldendict"
   "app-text/quarto-bin|quarto-dev/quarto-cli|v|github"
   "kde-misc/latte-dock-ng|ruizhi-lab/latte-dock-ng|v|github"
   "kde-misc/kwin-effects-glass|4v3ngR/kwin-effects-glass||github-date-hyphen"
@@ -183,6 +183,28 @@ if stable:
 ' 2>/dev/null || echo ""
 }
 
+# GoldenDict-ng also publishes vcpkg export archives and daily builds as
+# GitHub releases. Its Gentoo release version is the numeric component of the
+# stable `vX.Y.Z-Release.<commit>` tag, so ignore development-only releases.
+get_goldendict_latest() {
+  local repo="$1"
+  curl ${CURL_OPTS} "${GH_API}/repos/${repo}/releases?per_page=100" 2>/dev/null \
+    | python3 -c '
+import json,re,sys
+try:
+    releases=json.load(sys.stdin)
+    for release in releases:
+        if release.get("prerelease") or release.get("draft"):
+            continue
+        match=re.fullmatch(r"v?(\d+\.\d+\.\d+)-Release\.[0-9a-fA-F]+", release.get("tag_name", ""))
+        if match:
+            print(match.group(1))
+            break
+except Exception:
+    pass
+' 2>/dev/null || echo ""
+}
+
 # Get the latest non-yanked, stable numeric release from the PyPI JSON API.
 # These ComfyUI asset projects publish their release versions on PyPI and use
 # plain numeric version components without upstream tag prefixes.
@@ -342,6 +364,10 @@ for entry in "${PKGS[@]}"; do
       ;;
     pypi)
       latest=$(get_pypi_latest "$repo")
+      [[ -z "$latest" || "$latest" == "null" ]] && continue
+      ;;
+    github-goldendict)
+      latest=$(get_goldendict_latest "$repo")
       [[ -z "$latest" || "$latest" == "null" ]] && continue
       ;;
     github-date-hyphen)

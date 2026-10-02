@@ -12,16 +12,12 @@ SRC_URI="
 		https://persistent.oaistatic.com/codex-app-prod/linux/deb/pool/main/c/chatgpt/chatgpt_${PV}_amd64.deb
 			-> ${P}-amd64.deb
 	)
-	arm64? (
-		https://persistent.oaistatic.com/codex-app-prod/linux/deb/pool/main/c/chatgpt/chatgpt_${PV}_arm64.deb
-			-> ${P}-arm64.deb
-	)
 "
 S=${WORKDIR}
 
 LICENSE="ChatGPT-Desktop"
 SLOT="0"
-KEYWORDS="-* ~amd64 ~arm64"
+KEYWORDS="-* ~amd64"
 IUSE="apparmor qt6 wayland"
 RESTRICT="bindist mirror strip"
 
@@ -71,7 +67,6 @@ src_prepare() {
 	default
 
 	local arch=x64
-	use arm64 && arch=arm64
 
 	# Upstream ships prebuilt node modules for every platform it targets.
 	local candidate
