@@ -25,6 +25,7 @@ PKGS=(
   "kde-misc/kwin-effects-glass|4v3ngR/kwin-effects-glass||github-date-hyphen"
   "media-fonts/sarasa-gothic|be5invis/Sarasa-Gothic|v|github"
   "media-fonts/sarasa-term-sc-nerd|laishulu/Sarasa-Term-SC-Nerd|v|github"
+  "media-sound/sidra-bin|wimpysworld/sidra||github"
   "media-sound/yesplaymusic-bin|qier222/YesPlayMusic|v|github"
   "x11-themes/tela-icon-theme|vinceliuice/Tela-icon-theme||github-date-iso"
   "net-misc/xrdp|neutrinolabs/xrdp|v|github"
