@@ -4,6 +4,14 @@ These instructions apply to the entire `ruizhi-overlay` repository. Preserve
 unrelated user changes and follow the existing package style unless a task
 explicitly requires otherwise.
 
+## Language
+
+- Write all repository comments and documentation in English. This includes
+  source-code comments, ebuild comments, README and other documentation, and
+  patch headers.
+- Write all repository-related replies in English, including GitHub issue and
+  pull request comments, commit messages, and user-facing task summaries.
+
 ## Overlay workflow
 
 - Use EAPI 8 for new ebuilds unless an upstream or Gentoo requirement calls for
