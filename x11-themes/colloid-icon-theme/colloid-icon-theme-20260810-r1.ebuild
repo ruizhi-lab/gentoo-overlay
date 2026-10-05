@@ -48,9 +48,15 @@ src_install() {
 	einstalldocs
 	dodir /usr/share/icons
 
+	local installer_contents="$(<install.sh)"
 	local options=( -d "${ED}/usr/share/icons" )
-	use kde && options+=( -p )
-	use alternative && options+=( -a )
+	# Older releases do not implement the KDE and alternative installer options.
+	if use kde && [[ "${installer_contents}" == *"-p|--kde-plasma)"* ]]; then
+		options+=( -p )
+	fi
+	if use alternative && [[ "${installer_contents}" == *"-a|--alternative)"* ]]; then
+		options+=( -a )
+	fi
 	use bold && options+=( -b )
 	if ! use minimal; then
 		options+=( -s all -t all )
