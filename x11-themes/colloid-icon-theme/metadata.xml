@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<name>Ruizhi Zhong</name>
+		<email>ruizhi.zhong88@gmail.com</email>
+	</maintainer>
+	<use>
+		<flag name="alternative">Install alternative software center and file manager icons</flag>
+		<flag name="bold">Install bolder panel icons</flag>
+		<flag name="kde">Use KDE Plasma branding in the icon theme</flag>
+		<flag name="minimal">Install only the default folder colors and scheme</flag>
+	</use>
+	<upstream>
+		<remote-id type="github">vinceliuice/Colloid-icon-theme</remote-id>
+	</upstream>
+</pkgmetadata>

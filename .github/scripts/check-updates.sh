@@ -27,6 +27,7 @@ PKGS=(
   "media-fonts/sarasa-term-sc-nerd|laishulu/Sarasa-Term-SC-Nerd|v|github"
   "media-sound/sidra-bin|wimpysworld/sidra||github"
   "media-sound/yesplaymusic-bin|qier222/YesPlayMusic|v|github"
+  "x11-themes/colloid-icon-theme|vinceliuice/Colloid-icon-theme||github-date-iso"
   "x11-themes/tela-icon-theme|vinceliuice/Tela-icon-theme||github-date-iso"
   "net-misc/xrdp|neutrinolabs/xrdp|v|github"
   "net-proxy/v2rayn-bin|2dust/v2rayN||github"
