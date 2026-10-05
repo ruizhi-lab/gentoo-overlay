@@ -9,8 +9,8 @@ explicitly requires otherwise.
 - Write all repository comments and documentation in English. This includes
   source-code comments, ebuild comments, README and other documentation, and
   patch headers.
-- Write all repository-related replies in English, including GitHub issue and
-  pull request comments, commit messages, and user-facing task summaries.
+- Write GitHub issue and pull request comments, commit messages, and other
+  content published to GitHub in English.
 
 ## Overlay workflow
 
@@ -22,9 +22,10 @@ explicitly requires otherwise.
   QA checks. Also run `xmllint --noout metadata.xml` and `git diff --check`.
 - When `pkgcheck` cannot write its default cache, set a task-specific
   `XDG_CACHE_HOME` under `/tmp`.
-- Test meaningful source packages with an actual build, preferably in the
-  existing `docker-gentoo:latest` image. A successful configure step alone is
-  not a sufficient build test.
+- An actual build of a meaningful source package can help catch regressions,
+  preferably in the existing `docker-gentoo:latest` image, but local Docker
+  validation is optional. Do not describe a configure-only check as a
+  successful build.
 - When bumping a package, remove an ebuild that is genuinely superseded. Keep a
   live `9999` ebuild when it is intentionally offered alongside releases.
 - Add new release packages to `.github/scripts/check-updates.sh` when upstream
@@ -40,6 +41,11 @@ explicitly requires otherwise.
 
 ## Dependencies and USE flags
 
+- Verify dependency package names, versions, and USE requirements against
+  authoritative sources before adding or changing them. Use the software
+  project's official documentation or build metadata for upstream requirements,
+  and the Gentoo or GURU repository for package atoms, available versions, and
+  USE flags. Do not infer package names or version constraints from memory.
 - Classify dependencies correctly: build-host tools belong in `BDEPEND`, build
   headers/libraries in `DEPEND`, and runtime requirements in `RDEPEND`.
 - Check inherited eclasses before declaring dependencies they already provide.
