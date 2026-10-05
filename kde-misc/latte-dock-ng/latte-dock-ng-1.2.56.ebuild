@@ -58,6 +58,7 @@ BDEPEND="
 
 src_configure() {
 	local mycmakeargs=(
+		-DVERSION="${PV}"
 		-DBUILD_TESTING=OFF
 	)
 
