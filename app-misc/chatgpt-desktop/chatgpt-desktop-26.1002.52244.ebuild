@@ -37,6 +37,7 @@ RDEPEND="
 	media-libs/mesa[gbm(+),vulkan]
 	net-print/cups
 	sys-apps/dbus
+	sys-apps/xdg-desktop-portal
 	sys-libs/glibc
 	virtual/libudev
 	virtual/libusb:1
@@ -55,6 +56,17 @@ RDEPEND="
 	x11-libs/libXrandr
 	x11-libs/pango
 	x11-misc/xdg-utils
+	|| (
+		dev-util/glib-utils
+		kde-plasma/kde-cli-tools
+		app-misc/trash-cli
+		gnome-base/gvfs
+	)
+	|| (
+		sys-apps/xdg-desktop-portal-gtk
+		sys-apps/xdg-desktop-portal-gnome
+		kde-plasma/xdg-desktop-portal-kde
+	)
 	apparmor? (
 		>=sec-policy/apparmor-profiles-4
 		>=sys-apps/apparmor-4

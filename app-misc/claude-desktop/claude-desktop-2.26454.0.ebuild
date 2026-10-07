@@ -12,16 +12,12 @@ SRC_URI="
 		https://downloads.claude.ai/claude-desktop/apt/stable/pool/main/c/claude-desktop/claude-desktop_${PV}_amd64.deb
 			-> ${P}-amd64.deb
 	)
-	arm64? (
-		https://downloads.claude.ai/claude-desktop/apt/stable/pool/main/c/claude-desktop/claude-desktop_${PV}_arm64.deb
-			-> ${P}-arm64.deb
-	)
 "
 S="${WORKDIR}"
 
 LICENSE="Anthropic"
 SLOT="0"
-KEYWORDS="-* ~amd64 ~arm64"
+KEYWORDS="-* ~amd64"
 RESTRICT="bindist mirror strip"
 
 RDEPEND="
@@ -34,9 +30,11 @@ RDEPEND="
 	dev-libs/nss
 	media-libs/alsa-lib
 	media-libs/mesa[gbm(+)]
+	>=media-video/pipewire-0.3:=
 	net-print/cups
 	sys-apps/dbus
 	sys-apps/xdg-desktop-portal
+	sys-apps/util-linux
 	sys-libs/libcap-ng
 	sys-libs/libseccomp
 	virtual/libudev
@@ -55,6 +53,11 @@ RDEPEND="
 	x11-libs/libXtst
 	x11-libs/pango
 	x11-misc/xdg-utils
+	|| (
+		sys-apps/xdg-desktop-portal-gtk
+		sys-apps/xdg-desktop-portal-gnome
+		kde-plasma/xdg-desktop-portal-kde
+	)
 "
 
 QA_PREBUILT="*"

@@ -11,7 +11,7 @@ inherit distutils-r1
 
 DESCRIPTION="Bundled web frontend assets for ComfyUI"
 HOMEPAGE="https://github.com/Comfy-Org/ComfyUI_frontend https://pypi.org/project/comfyui-frontend-package/"
-SRC_URI="https://files.pythonhosted.org/packages/b0/fb/2aaa4a3ed12109b28d513e509e14b16e05ba97ceed6df3ac512f3e91b8bd/comfyui_frontend_package-1.53.6.tar.gz -> ${P}.tar.gz"
+SRC_URI="https://files.pythonhosted.org/packages/4d/2c/60f2b07fa2ed043bfb86d40f729bd251c0bca8e4e06c09582b959a9126ef/comfyui_frontend_package-1.53.10.tar.gz -> ${P}.tar.gz"
 S="${WORKDIR}/${PN//-/_}-${PV}"
 
 LICENSE="GPL-3"
