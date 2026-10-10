@@ -16,7 +16,6 @@ KEYWORDS=""
 PROPERTIES="live"
 
 COMMON_DEPEND="
-	>=dev-libs/plasma-wayland-protocols-1.6
 	>=dev-libs/wayland-1.22
 	>=dev-qt/qtbase-6.6:6[dbus,gui,widgets]
 	>=dev-qt/qtdeclarative-6.6:6
@@ -32,6 +31,7 @@ COMMON_DEPEND="
 	>=kde-frameworks/kguiaddons-6.0:6
 	>=kde-frameworks/ki18n-6.0:6
 	>=kde-frameworks/kiconthemes-6.0:6
+	>=kde-frameworks/kitemmodels-6.0:6
 	>=kde-frameworks/kio-6.0:6
 	>=kde-frameworks/kirigami-6.0:6
 	>=kde-frameworks/knewstuff-6.0:6
@@ -49,7 +49,10 @@ COMMON_DEPEND="
 	>=kde-plasma/plasma-workspace-6.5:6
 "
 RDEPEND="${COMMON_DEPEND}"
-DEPEND="${COMMON_DEPEND}"
+# Build-only: ECM reads these XML definitions to generate Wayland client bindings.
+DEPEND="${COMMON_DEPEND}
+	>=dev-libs/plasma-wayland-protocols-1.6
+"
 BDEPEND="
 	>=dev-qt/qtbase-6.6:6
 	>=kde-frameworks/extra-cmake-modules-6.0
