@@ -3,6 +3,7 @@ name: Check upstream updates
 on:
   schedule:
     - cron: '0 10 * * 2' # every Tuesday at 18:00 China Standard Time (10:00 UTC)
+    - cron: '0 10 * * 3' # Wednesday fallback at 18:00 China Standard Time (10:00 UTC)
   workflow_dispatch:       # allow manual trigger
 
 permissions:
