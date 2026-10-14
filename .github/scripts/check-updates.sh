@@ -456,7 +456,7 @@ for entry in "${PKGS[@]}"; do
     gentoozh)
       echo "UPDATE: ${pkg}: ${current} -> ${latest}  (https://github.com/gentoo-zh/overlay/tree/master/${repo})"
       ;;
-    openai-deb)
+    openai-deb|claude-deb)
       echo "UPDATE: ${pkg}: ${current} -> ${latest}  (${repo})"
       ;;
     pypi)

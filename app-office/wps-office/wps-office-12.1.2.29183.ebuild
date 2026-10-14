@@ -13,7 +13,7 @@ HOMEPAGE="https://www.wps.cn/product/wpslinux/"
 # as a static SRC_URI. The community mirror used previously (dogfood.gnupg.uk)
 # is stale for this release (its redirect points at a CDN object that no
 # longer exists), so src_unpack() signs and fetches the URL itself.
-MY_BUILD_ID="765474" # WPS build id, matches the current AUR wps-office-cn package
+MY_BUILD_ID="806791" # WPS build id, matches the current AUR wps-office-cn package
 MY_SIGN_KEY="7f8faaaa468174dc1c9cd62e5f218a5b" # public CDN signing key (see the AUR PKGBUILD)
 
 S="${WORKDIR}"

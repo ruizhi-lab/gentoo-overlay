@@ -11,7 +11,7 @@ inherit distutils-r1
 
 DESCRIPTION="Embedded per-node documentation assets for ComfyUI"
 HOMEPAGE="https://github.com/Comfy-Org/embedded-docs https://pypi.org/project/comfyui-embedded-docs/"
-SRC_URI="https://files.pythonhosted.org/packages/c4/65/a8b482a9722dd20758a311086d676ab7047fe7391dbac8b86b14f0eb1401/comfyui_embedded_docs-0.5.13.tar.gz -> ${P}.tar.gz"
+SRC_URI="https://files.pythonhosted.org/packages/ee/09/b5edfd24523b3757d7e24f6e7b07864c856387feab9e2ce066d5bf56c405/comfyui_embedded_docs-0.5.14.tar.gz -> ${P}.tar.gz"
 S="${WORKDIR}/${PN//-/_}-${PV}"
 
 LICENSE="GPL-3"
