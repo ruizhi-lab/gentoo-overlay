@@ -24,7 +24,9 @@ RDEPEND="
 	~dev-python/comfyui-workflow-templates-0.11.82[${PYTHON_SINGLE_USEDEP}]
 	~dev-python/comfy-aimdo-0.5.6[${PYTHON_SINGLE_USEDEP}]
 	~dev-python/comfy-kitchen-0.2.37[cuda?,rocm?,${PYTHON_SINGLE_USEDEP}]
-	>=sci-ml/tokenizers-0.13.3[${PYTHON_SINGLE_USEDEP}]
+	$(python_gen_cond_dep '
+		>=sci-ml/tokenizers-0.13.3[${PYTHON_USEDEP}]
+	')
 	sci-ml/torchsde[${PYTHON_SINGLE_USEDEP}]
 	>=sci-ml/transformers-4.50.3[${PYTHON_SINGLE_USEDEP}]
 	$(python_gen_cond_dep '
