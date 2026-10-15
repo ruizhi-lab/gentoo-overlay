@@ -2,8 +2,8 @@ name: Check upstream updates
 
 on:
   schedule:
-    - cron: '37 8 * * 2'  # every Tuesday at 08:37 UTC
-    - cron: '23 14 * * 5' # Friday fallback if GitHub drops the Tuesday event
+    - cron: '13 10 * * 2' # every Tuesday at 18:13 China Standard Time (10:13 UTC)
+    - cron: '13 10 * * 3' # Wednesday fallback at 18:13 China Standard Time (10:13 UTC)
   workflow_dispatch:       # allow manual trigger
 
 permissions:

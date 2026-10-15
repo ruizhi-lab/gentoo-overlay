@@ -5,8 +5,8 @@ EAPI=8
 
 inherit cmake cuda toolchain-funcs
 
-PRISM_TAG="prism-b${PV}-2459f68"
-PRISM_COMMIT="2459f68"
+PRISM_TAG="prism-b${PV}-d00e252"
+PRISM_COMMIT="d00e252"
 
 DESCRIPTION="PrismML llama.cpp fork with Bonsai low-bit model support"
 HOMEPAGE="https://github.com/PrismML-Eng/llama.cpp"
