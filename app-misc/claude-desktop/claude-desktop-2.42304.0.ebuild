@@ -82,5 +82,7 @@ pkg_postinst() {
 	elog "~/.claude is shared with Claude Code, so signing in may update its login state."
 
 	optfeature "secret/keyring storage" virtual/secret-service
-	optfeature "Cowork sandboxed VM support" app-emulation/qemu sys-firmware/edk2-bin
+	optfeature "Cowork support" \
+		app-emulation/qemu sys-firmware/edk2-bin sys-apps/bubblewrap \
+		net-misc/socat net-misc/openssh
 }

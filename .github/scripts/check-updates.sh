@@ -7,6 +7,8 @@
 #   type=github:    source is GitHub repo (e.g. "owner/repository")
 #   type=pypi:      source is the PyPI project name
 #   type=github-date-hyphen: GitHub tag YYYYMMDD-N maps to Gentoo YYYYMMDD.N
+#   type=github-kwin-glass: KWin Glass tag YYYYMMDD-6.8.0-support maps to
+#                           Gentoo YYYYMMDD.6.8.0
 #   type=github-prism-build: Prism tag prism-bN-<commit> maps to Gentoo N
 #   type=jetbrains: source is JetBrains product code (e.g. "DG")
 #   type=scooter:   source is unused; scrapes scootersoftware.com kb/linux_install
@@ -22,7 +24,7 @@ PKGS=(
   "app-text/goldendict-ng|xiaoyifang/goldendict-ng||github-goldendict"
   "app-text/quarto-bin|quarto-dev/quarto-cli|v|github"
   "kde-misc/latte-dock-ng|ruizhi-lab/latte-dock-ng|v|github"
-  "kde-misc/kwin-effects-glass|4v3ngR/kwin-effects-glass||github-date-hyphen"
+  "kde-misc/kwin-effects-glass|4v3ngR/kwin-effects-glass||github-kwin-glass"
   "media-fonts/sarasa-gothic|be5invis/Sarasa-Gothic|v|github"
   "media-fonts/sarasa-term-sc-nerd|laishulu/Sarasa-Term-SC-Nerd|v|github"
   "media-sound/sidra-bin|wimpysworld/sidra||github"
@@ -167,7 +169,8 @@ for t in tags:
     stripped = name.lstrip("v")
     if not (re.match(r"^\d+(\.\d+)+$", stripped)
             or re.match(r"^\d{12,14}$", stripped)
-            or re.match(r"^\d{8}-\d+$", stripped)):
+            or re.match(r"^\d{8}-\d+$", stripped)
+            or re.match(r"^\d{8}-\d+(?:\.\d+)*-support$", stripped)):
         continue
     if prerelease_word.search(stripped):
         continue
@@ -175,11 +178,8 @@ for t in tags:
 
 if stable:
     def sort_key(v):
-        parts = re.split(r"[.-]", v)
-        try:
-            return (0, tuple(int(p) for p in parts))
-        except ValueError:
-            return (1, int(v))
+        parts = [p for p in re.split(r"[.-]", v) if p != "support"]
+        return tuple(int(p) for p in parts)
     stable.sort(key=sort_key)
     print(stable[-1])
 ' 2>/dev/null || echo ""
@@ -380,6 +380,11 @@ for entry in "${PKGS[@]}"; do
       latest=$(get_latest_stable "$repo" "$current_tag")
       [[ -z "$latest" || "$latest" == "null" ]] && continue
       ;;
+    github-kwin-glass)
+      current_tag="${current%%.*}-${current#*.}-support"
+      latest=$(get_latest_stable "$repo" "$current_tag")
+      [[ -z "$latest" || "$latest" == "null" ]] && continue
+      ;;
     github-prism-build)
       latest=$(get_latest_stable "$repo" "$current")
       [[ -z "$latest" || "$latest" == "null" ]] && continue
@@ -413,6 +418,14 @@ for entry in "${PKGS[@]}"; do
   # as 20260620-1 to the corresponding Gentoo PV 20260620.1 for comparison.
   if [[ "${type:-github}" == "github-date-hyphen" ]]; then
     lat="${lat/-/.}"
+  fi
+
+  if [[ "${type:-github}" == "github-kwin-glass" ]]; then
+    if [[ "$lat" =~ ^([0-9]{8})-([0-9]+(\.[0-9]+)*)-support$ ]]; then
+      lat="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
+    else
+      continue
+    fi
   fi
 
   # Upstream tags use YYYY-MM-DD while the ebuild PV uses Gentoo's YYYYMMDD.

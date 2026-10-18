@@ -7,11 +7,9 @@ inherit ecm
 
 DESCRIPTION="Liquid Glass-like blur and refraction effect for KDE Plasma 6"
 HOMEPAGE="https://github.com/4v3ngR/kwin-effects-glass"
-MY_TAG="${PV/./-}"
+MY_TAG="20261016-6.8.0-support"
 SRC_URI="https://github.com/4v3ngR/kwin-effects-glass/archive/refs/tags/${MY_TAG}.tar.gz -> ${P}.tar.gz"
 S="${WORKDIR}/kwin-effects-glass-${MY_TAG}"
-
-PATCHES=( "${FILESDIR}/kwin-effects-glass-20260620-kwin-66.patch" )
 
 LICENSE="GPL-2+"
 SLOT="0"
