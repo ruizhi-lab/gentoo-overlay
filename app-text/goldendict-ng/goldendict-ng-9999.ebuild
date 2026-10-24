@@ -19,13 +19,13 @@ PROPERTIES="live"
 RDEPEND="
 	app-arch/bzip2
 	app-arch/xz-utils
-	app-i18n/opencc
-	app-text/hunspell
+	app-i18n/opencc:=
+	app-text/hunspell:=
 	dev-cpp/tomlplusplus
 	dev-libs/kdsingleapplication
-	dev-libs/libfmt
+	dev-libs/libfmt:=
 	dev-libs/lzo
-	dev-libs/xapian
+	dev-libs/xapian:=
 	dev-qt/qtbase:6[X,gui,network,sql,widgets,xml]
 	dev-qt/qtmultimedia:6
 	dev-qt/qtspeech:6
@@ -36,7 +36,7 @@ RDEPEND="
 	media-libs/tiff:0
 	virtual/zlib
 	ffmpeg? ( media-video/ffmpeg:0= )
-	zim? ( app-arch/libzim )
+	zim? ( app-arch/libzim:= )
 	epwing? ( dev-libs/eb )
 "
 DEPEND="${RDEPEND}"
@@ -44,7 +44,6 @@ BDEPEND="virtual/pkgconfig"
 
 src_configure() {
 	local mycmakeargs=(
-		-DCMAKE_BUILD_TYPE=Release
 		-DWITH_FFMPEG_PLAYER=$(usex ffmpeg ON OFF)
 		-DWITH_ZIM=$(usex zim ON OFF)
 		-DWITH_EPWING_SUPPORT=$(usex epwing ON OFF)
