@@ -19,11 +19,11 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE} ?? ( cuda rocm )"
 
 RDEPEND="
 	${PYTHON_DEPS}
-	~dev-python/comfyui-embedded-docs-0.5.14[${PYTHON_SINGLE_USEDEP}]
-	~dev-python/comfyui-frontend-package-1.55.18[${PYTHON_SINGLE_USEDEP}]
-	~dev-python/comfyui-workflow-templates-0.11.96[${PYTHON_SINGLE_USEDEP}]
-	~dev-python/comfy-aimdo-0.5.6[${PYTHON_SINGLE_USEDEP}]
-	~dev-python/comfy-kitchen-0.2.39[cuda?,rocm?,${PYTHON_SINGLE_USEDEP}]
+	~dev-python/comfyui-embedded-docs-0.5.15[${PYTHON_SINGLE_USEDEP}]
+	~dev-python/comfyui-frontend-package-1.57.4[${PYTHON_SINGLE_USEDEP}]
+	~dev-python/comfyui-workflow-templates-0.11.97[${PYTHON_SINGLE_USEDEP}]
+	~dev-python/comfy-aimdo-0.6.0[${PYTHON_SINGLE_USEDEP}]
+	~dev-python/comfy-kitchen-0.2.40[cuda?,rocm?,${PYTHON_SINGLE_USEDEP}]
 	$(python_gen_cond_dep '
 		>=sci-ml/tokenizers-0.13.3[${PYTHON_USEDEP}]
 	')
@@ -36,7 +36,7 @@ RDEPEND="
 		sci-ml/einops[${PYTHON_USEDEP}]
 		>=dev-python/numpy-1.25.0[${PYTHON_USEDEP}]
 		dev-python/psutil[${PYTHON_USEDEP}]
-		dev-python/pillow[${PYTHON_USEDEP}]
+		>=dev-python/pillow-10.1.0[${PYTHON_USEDEP}]
 		dev-python/pyyaml[${PYTHON_USEDEP}]
 		>=sci-ml/safetensors-0.4.2[${PYTHON_USEDEP}]
 		dev-python/scipy[${PYTHON_USEDEP}]
