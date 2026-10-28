@@ -34,6 +34,8 @@ jobs:
             exit 1
           fi
 
+          echo "update_count=${UPDATE_COUNT}" >> "$GITHUB_OUTPUT"
+
           DELIMITER="EOF_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_${RANDOM}"
           {
             echo "output<<${DELIMITER}"
@@ -42,7 +44,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Create issue if updates found
-        if: steps.check.outputs.output != ''
+        if: steps.check.outputs.update_count != '0'
         uses: actions/github-script@v7
         with:
           # Pass the multiline output through the environment to avoid embedding

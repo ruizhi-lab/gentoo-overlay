@@ -5,7 +5,6 @@
 #
 # Entry format: "category/package|source|version_prefix|type"
 #   type=github:    source is GitHub repo (e.g. "owner/repository")
-#   type=pypi:      source is the PyPI project name
 #   type=github-date-hyphen: GitHub tag YYYYMMDD-N maps to Gentoo YYYYMMDD.N
 #   type=github-kwin-glass: KWin Glass tag YYYYMMDD-6.8.0-support maps to
 #                           Gentoo YYYYMMDD.6.8.0
@@ -15,6 +14,13 @@
 #   type=aur:       source is AUR package name (e.g. "wps-office-cn")
 #   type=openai-deb: source is the OpenAI Debian Packages index
 #   type=claude-deb: source is the Claude Desktop Debian Packages index
+#   type=comfy-pin: source is a project name pinned with "==" in the
+#                   requirements.txt of the latest ComfyUI release
+#   type=comfy-pin-sub: source is a PyPI project name pinned with "==" by the
+#                       comfyui-workflow-templates release that ComfyUI pins
+#
+# A lookup that fails, or finds no version, is reported as a "::error::" line on
+# stderr and that entry is skipped. The exit status is the number of UPDATE lines.
 
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -36,21 +42,23 @@ PKGS=(
   "net-misc/xorgxrdp|neutrinolabs/xorgxrdp|v|github"
   "dev-python/kornia-rs|kornia/kornia-rs|v|github"
   "media-gfx/comfyui|Comfy-Org/ComfyUI|v|github"
-  "dev-python/comfy-aimdo|Comfy-Org/comfy-aimdo|v|github"
-  "dev-python/comfy-kitchen|Comfy-Org/comfy-kitchen|v|github"
-  # Track PyPI latest for visibility only: these assets follow the exact pins
-  # from the matching ComfyUI release's requirements.txt, not standalone bumps.
-  "dev-python/comfyui-embedded-docs|comfyui-embedded-docs||pypi"
-  "dev-python/comfyui-frontend-package|comfyui-frontend-package||pypi"
-  "dev-python/comfyui-workflow-templates|comfyui-workflow-templates||pypi"
-  "dev-python/comfyui-workflow-templates-core|comfyui-workflow-templates-core||pypi"
-  "dev-python/comfyui-workflow-templates-json|comfyui-workflow-templates-json||pypi"
-  "dev-python/comfyui-workflow-templates-media-api|comfyui-workflow-templates-media-api||pypi"
-  "dev-python/comfyui-workflow-templates-media-video|comfyui-workflow-templates-media-video||pypi"
-  "dev-python/comfyui-workflow-templates-media-image|comfyui-workflow-templates-media-image||pypi"
-  "dev-python/comfyui-workflow-templates-media-other|comfyui-workflow-templates-media-other||pypi"
-  "dev-python/comfyui-workflow-templates-media-assets-one|comfyui-workflow-templates-media-assets-01||pypi"
-  "dev-python/comfyui-workflow-templates-media-assets-two|comfyui-workflow-templates-media-assets-02||pypi"
+  # ComfyUI's asset packages follow the exact pins in its requirements.txt, so
+  # they are compared with those pins rather than with the newest upstream release.
+  "dev-python/comfy-aimdo|comfy-aimdo||comfy-pin"
+  "dev-python/comfy-kitchen|comfy-kitchen||comfy-pin"
+  "dev-python/comfyui-embedded-docs|comfyui-embedded-docs||comfy-pin"
+  "dev-python/comfyui-frontend-package|comfyui-frontend-package||comfy-pin"
+  "dev-python/comfyui-workflow-templates|comfyui-workflow-templates||comfy-pin"
+  # The workflow-templates sub-packages are pinned by the comfyui-workflow-templates
+  # release that ComfyUI pins, so they are compared with that release's requirements.
+  "dev-python/comfyui-workflow-templates-core|comfyui-workflow-templates-core||comfy-pin-sub"
+  "dev-python/comfyui-workflow-templates-json|comfyui-workflow-templates-json||comfy-pin-sub"
+  "dev-python/comfyui-workflow-templates-media-api|comfyui-workflow-templates-media-api||comfy-pin-sub"
+  "dev-python/comfyui-workflow-templates-media-video|comfyui-workflow-templates-media-video||comfy-pin-sub"
+  "dev-python/comfyui-workflow-templates-media-image|comfyui-workflow-templates-media-image||comfy-pin-sub"
+  "dev-python/comfyui-workflow-templates-media-other|comfyui-workflow-templates-media-other||comfy-pin-sub"
+  "dev-python/comfyui-workflow-templates-media-assets-one|comfyui-workflow-templates-media-assets-01||comfy-pin-sub"
+  "dev-python/comfyui-workflow-templates-media-assets-two|comfyui-workflow-templates-media-assets-02||comfy-pin-sub"
   "sci-ml/einops|arogozhnikov/einops|v|github"
   "sci-ml/kornia|kornia/kornia|v|github"
   "sci-ml/spandrel|chaiNNer-org/spandrel|v|github"
@@ -71,9 +79,12 @@ PKGS=(
 )
 
 GH_API="${GITHUB_API_URL:-https://api.github.com}"
-CURL_OPTS="${CURL_OPTS:--s}"
+# Every request follows redirects (repositories get renamed), fails on HTTP
+# errors, and gives up after 60 seconds, so a bad response is reported by the
+# caller instead of being parsed as empty output.
+CURL_ARGS=(-fsL --connect-timeout 20 --max-time 60)
 if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-  CURL_OPTS="$CURL_OPTS -H \"Authorization: Bearer ${GITHUB_TOKEN}\""
+  CURL_ARGS+=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
 fi
 OUTPUT_JSON="${1:-}"
 [[ "$OUTPUT_JSON" == "--json" ]] && OUTPUT_JSON=true || OUTPUT_JSON=false
@@ -100,31 +111,29 @@ has_snapshot() {
 # 2. If no stable release found, or the latest stable release is older than
 #    the current version (upstream stopped creating releases), fall back to
 #    tags API with prerelease-suffix filtering.
+# Exit status 1 means a request failed; an empty result means no version found.
 get_latest_stable() {
   local repo="$1"
   local current_ver="${2:-}"
 
   # Fetch releases list, pick first non-prerelease, non-draft
   local latest
-  latest=$(curl ${CURL_OPTS} "${GH_API}/repos/${repo}/releases?per_page=30" 2>/dev/null \
+  latest=$(curl "${CURL_ARGS[@]}" "${GH_API}/repos/${repo}/releases?per_page=30" \
     | python3 -c '
 import json,sys
-try:
-    releases = json.load(sys.stdin)
-    if not isinstance(releases, list):
-        sys.exit(0)
-    for r in releases:
-        if not r.get("prerelease") and not r.get("draft"):
-            print(r["tag_name"])
-            break
-except: pass
-' 2>/dev/null || echo "")
+releases = json.load(sys.stdin)
+if not isinstance(releases, list):
+    sys.exit(1)
+for r in releases:
+    if not r.get("prerelease") and not r.get("draft"):
+        print(r["tag_name"])
+        break
+' 2>/dev/null) || return 1
 
   # If no stable release at all, fall back to tags
   if [[ -z "$latest" ]]; then
-    latest=$(get_latest_tag "$repo")
-    echo "$latest"
-    return
+    get_latest_tag "$repo" || return 1
+    return 0
   fi
 
   # If latest stable release is older than our current version,
@@ -137,8 +146,11 @@ except: pass
       oldest=$(printf '%s\n%s\n' "$rel_ver" "$cur_ver" | sort -V | head -1)
       if [[ "$oldest" == "$rel_ver" ]]; then
         local tag_latest
-        tag_latest=$(get_latest_tag "$repo")
-        [[ -n "$tag_latest" ]] && { echo "$tag_latest"; return; }
+        tag_latest=$(get_latest_tag "$repo") || return 1
+        if [[ -n "$tag_latest" ]]; then
+          echo "$tag_latest"
+          return 0
+        fi
       fi
     fi
   fi
@@ -151,12 +163,12 @@ except: pass
 # known unstable suffixes (rc, beta, alpha, etc.), and picks the highest.
 get_latest_tag() {
   local repo="$1"
-  curl ${CURL_OPTS} "${GH_API}/repos/${repo}/tags?per_page=100" 2>/dev/null \
+  curl "${CURL_ARGS[@]}" "${GH_API}/repos/${repo}/tags?per_page=100" \
     | python3 -c '
 import json,sys,re
 tags = json.load(sys.stdin)
 if not isinstance(tags, list):
-    sys.exit(0)
+    sys.exit(1)
 
 prerelease_word = re.compile(
     r"(?:^|[._+-])(rc|pre|alpha|beta|test|dev|nightly|snapshot|canary|preview"
@@ -182,7 +194,7 @@ if stable:
         return tuple(int(p) for p in parts)
     stable.sort(key=sort_key)
     print(stable[-1])
-' 2>/dev/null || echo ""
+' 2>/dev/null
 }
 
 # GoldenDict-ng also publishes vcpkg export archives and daily builds as
@@ -190,47 +202,47 @@ if stable:
 # stable `vX.Y.Z-Release.<commit>` tag, so ignore development-only releases.
 get_goldendict_latest() {
   local repo="$1"
-  curl ${CURL_OPTS} "${GH_API}/repos/${repo}/releases?per_page=100" 2>/dev/null \
+  curl "${CURL_ARGS[@]}" "${GH_API}/repos/${repo}/releases?per_page=100" \
     | python3 -c '
 import json,re,sys
-try:
-    releases=json.load(sys.stdin)
-    for release in releases:
-        if release.get("prerelease") or release.get("draft"):
-            continue
-        match=re.fullmatch(r"v?(\d+\.\d+\.\d+)-Release\.[0-9a-fA-F]+", release.get("tag_name", ""))
-        if match:
-            print(match.group(1))
-            break
-except Exception:
-    pass
-' 2>/dev/null || echo ""
+releases = json.load(sys.stdin)
+if not isinstance(releases, list):
+    sys.exit(1)
+for release in releases:
+    if release.get("prerelease") or release.get("draft"):
+        continue
+    match = re.fullmatch(r"v?(\d+\.\d+\.\d+)-Release\.[0-9a-fA-F]+", release.get("tag_name", ""))
+    if match:
+        print(match.group(1))
+        break
+' 2>/dev/null
 }
 
-# Get the latest non-yanked, stable numeric release from the PyPI JSON API.
-# These ComfyUI asset projects publish their release versions on PyPI and use
-# plain numeric version components without upstream tag prefixes.
-get_pypi_latest() {
-  local project="$1"
-  curl ${CURL_OPTS} "https://pypi.org/pypi/${project}/json" 2>/dev/null \
+# Print "name version" for every exact pin in a ComfyUI release's requirements.txt.
+# Names are normalized the way PyPI does (lowercase, runs of -_. become "-").
+get_comfy_pins() {
+  curl "${CURL_ARGS[@]}" "https://raw.githubusercontent.com/Comfy-Org/ComfyUI/$1/requirements.txt" \
     | python3 -c '
-import json,sys,re
-try:
-    releases = json.load(sys.stdin).get("releases", {})
-except Exception:
-    sys.exit(0)
+import re,sys
+for line in sys.stdin:
+    m = re.fullmatch(r"([A-Za-z0-9._-]+)==([0-9][0-9A-Za-z.+!_-]*)\s*(#.*)?", line.strip())
+    if m:
+        print(re.sub(r"[-_.]+", "-", m.group(1)).lower(), m.group(2))
+' 2>/dev/null
+}
 
-stable = []
-for version, files in releases.items():
-    if not re.fullmatch(r"\d+(?:\.\d+)*", version):
+# Print "name version" for every unconditional exact pin that a PyPI release declares.
+get_pypi_requires_pins() {
+  curl "${CURL_ARGS[@]}" "https://pypi.org/pypi/$1/$2/json" \
+    | python3 -c '
+import json,re,sys
+for req in json.load(sys.stdin)["info"].get("requires_dist") or []:
+    if ";" in req:
         continue
-    if not files or all(file.get("yanked", False) for file in files):
-        continue
-    stable.append((tuple(int(part) for part in version.split(".")), version))
-
-if stable:
-    print(max(stable)[1])
-' 2>/dev/null || echo ""
+    m = re.fullmatch(r"\s*([A-Za-z0-9._-]+)==([0-9][0-9A-Za-z.+!_-]*)\s*", req)
+    if m:
+        print(re.sub(r"[-_.]+", "-", m.group(1)).lower(), m.group(2))
+' 2>/dev/null
 }
 
 strip_prefix() {
@@ -243,24 +255,23 @@ strip_prefix() {
 # Arg: product code (e.g., "DG" for DataGrip).
 get_jetbrains_latest() {
   local code="$1"
-  curl ${CURL_OPTS} "https://data.services.jetbrains.com/products/releases?code=${code}&latest=true&type=release" 2>/dev/null \
+  curl "${CURL_ARGS[@]}" "https://data.services.jetbrains.com/products/releases?code=${code}&latest=true&type=release" \
     | python3 -c '
 import json,sys
-try:
-    data = json.load(sys.stdin)
-    releases = data.get(sys.argv[1], [])
-    if releases:
-        print(releases[0]["version"])
-except: pass
-' "$code" 2>/dev/null || echo ""
+data = json.load(sys.stdin)
+releases = data.get(sys.argv[1], [])
+if releases:
+    print(releases[0]["version"])
+' "$code" 2>/dev/null
 }
 
 # Get latest version from Scooter Software Linux install page.
 # Parses download links like bcompare-X.Y.Z.BUILD (full version with build number).
 get_scooter_latest() {
-  curl ${CURL_OPTS} "https://www.scootersoftware.com/kb/linux_install" 2>/dev/null \
-    | grep -oP 'bcompare-\K[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' 2>/dev/null \
-    | sort -Vu | tail -1 || echo ""
+  local page
+  page=$(curl "${CURL_ARGS[@]}" "https://www.scootersoftware.com/kb/linux_install") || return 1
+  printf '%s\n' "$page" | { grep -oP 'bcompare-\K[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' || true; } \
+    | sort -Vu | tail -1
 }
 
 # Get latest version from Arch Linux AUR.
@@ -268,19 +279,14 @@ get_scooter_latest() {
 # Strips AUR pkgrel suffix (-1, -2, etc.) for clean version comparison.
 get_aur_latest() {
   local pkgname="$1"
-  curl ${CURL_OPTS} "https://aur.archlinux.org/rpc/v5/info/${pkgname}" 2>/dev/null \
+  curl "${CURL_ARGS[@]}" "https://aur.archlinux.org/rpc/v5/info/${pkgname}" \
     | python3 -c '
 import json,sys
-try:
-    data = json.load(sys.stdin)
-    results = data.get("results", [])
-    if results:
-        ver = results[0]["Version"]
-        # Strip AUR pkgrel (e.g., "12.1.2.26885-1" -> "12.1.2.26885")
-        ver = ver.rsplit("-", 1)[0]
-        print(ver)
-except: pass
-' 2>/dev/null || echo ""
+results = json.load(sys.stdin).get("results", [])
+if results:
+    # Strip AUR pkgrel (e.g., "12.1.2.26885-1" -> "12.1.2.26885")
+    print(results[0]["Version"].rsplit("-", 1)[0])
+' 2>/dev/null
 }
 
 # Get latest version from gentoo-zh overlay.
@@ -288,124 +294,162 @@ except: pass
 # Uses GitHub API to list the package directory in gentoo-zh/overlay.
 get_gentoozh_latest() {
   local pkg_path="$1"
-  curl ${CURL_OPTS} "https://api.github.com/repos/gentoo-zh/overlay/contents/${pkg_path}" 2>/dev/null \
+  curl "${CURL_ARGS[@]}" "https://api.github.com/repos/gentoo-zh/overlay/contents/${pkg_path}" \
     | python3 -c '
-import json,sys,re
-try:
-    data = json.load(sys.stdin)
-    if not isinstance(data, list):
-        sys.exit(0)
-    versions = []
-    for item in data:
-        name = item["name"]
-        # Match ebuild filenames: pkg-version.ebuild (skip 9999)
-        m = re.match(r".+-([0-9][^-]*)\.ebuild$", name)
-        if m:
-            v = m.group(1).rstrip("-r1").rstrip("-r2").rstrip("-r3")
-            versions.append(v)
-    if versions:
-        def sort_key(v):
-            parts = re.split(r"[._]", v)
-            try:
-                return (0, tuple(int(p) for p in parts if p))
-            except ValueError:
-                return (1, 0)
-        versions.sort(key=sort_key)
-        print(versions[-1])
-except: pass
-' 2>/dev/null || echo ""
+import json,re,sys
+data = json.load(sys.stdin)
+if not isinstance(data, list):
+    sys.exit(1)
+versions = []
+for item in data:
+    # Match ebuild filenames: pkg-version[-rN].ebuild (skip 9999)
+    m = re.match(r".+-([0-9][^-]*?)(?:-r[0-9]+)?\.ebuild$", item["name"])
+    if m and "9999" not in m.group(1):
+        versions.append(m.group(1))
+if versions:
+    def sort_key(v):
+        parts = re.split(r"[._]", v)
+        try:
+            return (0, tuple(int(p) for p in parts if p))
+        except ValueError:
+            return (1, 0)
+    versions.sort(key=sort_key)
+    print(versions[-1])
+' 2>/dev/null
 }
 
 # Get the latest ChatGPT Desktop version from OpenAI's Debian repository.
 # The amd64 Packages index is sufficient because both supported architectures
-# are published from the same release stream.
+# are published from the same release stream. The index is read to the end so
+# that curl never writes into a pipe that awk has already closed.
 get_openai_deb_latest() {
-  curl ${CURL_OPTS} "$1" 2>/dev/null \
-    | awk '/^Package: chatgpt$/{found=1; next} found && /^Version:/{print $2; exit} found && /^Package:/{exit}'
+  curl "${CURL_ARGS[@]}" "$1" \
+    | awk '/^Package: chatgpt$/{found=1; next} found && /^Package:/{found=0} found && /^Version:/ && !done {print $2; done=1}'
 }
 
 # Claude's Packages index retains older releases, so select the highest version.
 get_claude_deb_latest() {
-  curl ${CURL_OPTS} "$1" 2>/dev/null \
+  curl "${CURL_ARGS[@]}" "$1" \
     | awk '/^Package: claude-desktop$/{found=1; next} found && /^Version:/{print $2; found=0}' \
     | sort -V | tail -1
 }
 
-updates_found=0
+# Pins that ComfyUI's latest release sets for its asset packages. They are loaded
+# once, so every comfy-pin entry compares against the same release. A failure is
+# recorded in the *_PIN_ERROR variables and reported for each dependent entry.
+declare -A COMFY_PINS=() SUB_PINS=()
+COMFY_REF=""
+COMFY_PIN_ERROR=""
+SUB_PIN_ERROR=""
 
-for entry in "${PKGS[@]}"; do
-  IFS='|' read -r pkg repo prefix type <<< "$entry"
+load_comfy_pins() {
+  local tag pins name version wt_version
+  if ! tag=$(get_latest_stable "Comfy-Org/ComfyUI") || [[ -z "$tag" ]]; then
+    COMFY_PIN_ERROR="could not resolve the latest ComfyUI release"
+    return 0
+  fi
+  if ! pins=$(get_comfy_pins "$tag") || [[ -z "$pins" ]]; then
+    COMFY_PIN_ERROR="could not read requirements.txt of ComfyUI ${tag}"
+    return 0
+  fi
+  while read -r name version; do
+    COMFY_PINS[$name]=$version
+  done <<< "$pins"
+  COMFY_REF=$tag
 
-  current=$(get_current_version "$pkg")
-  [[ -z "$current" ]] && continue
+  wt_version="${COMFY_PINS[comfyui-workflow-templates]:-}"
+  if [[ -z "$wt_version" ]]; then
+    SUB_PIN_ERROR="ComfyUI ${tag} does not pin comfyui-workflow-templates"
+    return 0
+  fi
+  if ! pins=$(get_pypi_requires_pins comfyui-workflow-templates "$wt_version") || [[ -z "$pins" ]]; then
+    SUB_PIN_ERROR="could not read the requirements of comfyui-workflow-templates ${wt_version}"
+    return 0
+  fi
+  while read -r name version; do
+    SUB_PINS[$name]=$version
+  done <<< "$pins"
+}
 
-  case "${type:-github}" in
-    jetbrains)
-      latest=$(get_jetbrains_latest "$repo")
-      [[ -z "$latest" || "$latest" == "null" ]] && continue
-      ;;
-    scooter)
-      latest=$(get_scooter_latest)
-      [[ -z "$latest" ]] && continue
-      ;;
-    aur)
-      latest=$(get_aur_latest "$repo")
-      [[ -z "$latest" ]] && continue
-      ;;
-    gentoozh)
-      latest=$(get_gentoozh_latest "$repo")
-      [[ -z "$latest" ]] && continue
-      ;;
-    openai-deb)
-      latest=$(get_openai_deb_latest "$repo")
-      [[ -z "$latest" ]] && continue
-      ;;
-    claude-deb)
-      latest=$(get_claude_deb_latest "$repo")
-      [[ -z "$latest" ]] && continue
-      ;;
-    pypi)
-      latest=$(get_pypi_latest "$repo")
-      [[ -z "$latest" || "$latest" == "null" ]] && continue
-      ;;
-    github-goldendict)
-      latest=$(get_goldendict_latest "$repo")
-      [[ -z "$latest" || "$latest" == "null" ]] && continue
-      ;;
+# Print the latest upstream version for one entry. Exit status 1 means the
+# upstream request failed; empty output means no version was found.
+lookup_latest() {
+  local type="$1" repo="$2" current="$3"
+  case "$type" in
+    jetbrains)         get_jetbrains_latest "$repo" ;;
+    scooter)           get_scooter_latest ;;
+    aur)               get_aur_latest "$repo" ;;
+    gentoozh)          get_gentoozh_latest "$repo" ;;
+    openai-deb)        get_openai_deb_latest "$repo" ;;
+    claude-deb)        get_claude_deb_latest "$repo" ;;
+    comfy-pin)         printf '%s\n' "${COMFY_PINS[$repo]:-}" ;;
+    comfy-pin-sub)     printf '%s\n' "${SUB_PINS[$repo]:-}" ;;
+    github-goldendict) get_goldendict_latest "$repo" ;;
     github-date-hyphen)
       # Compare release tags in their upstream form so an equal release does
       # not look older than the Gentoo-normalized PV and trigger a tags
       # fallback. For example, 20260620.1 maps back to 20260620-1.
-      current_tag="${current/./-}"
-      latest=$(get_latest_stable "$repo" "$current_tag")
-      [[ -z "$latest" || "$latest" == "null" ]] && continue
-      ;;
+      get_latest_stable "$repo" "${current/./-}" ;;
     github-kwin-glass)
-      current_tag="${current%%.*}-${current#*.}-support"
-      latest=$(get_latest_stable "$repo" "$current_tag")
-      [[ -z "$latest" || "$latest" == "null" ]] && continue
-      ;;
+      get_latest_stable "$repo" "${current%%.*}-${current#*.}-support" ;;
     github-prism-build)
-      latest=$(get_latest_stable "$repo" "$current")
-      [[ -z "$latest" || "$latest" == "null" ]] && continue
-      ;;
+      get_latest_stable "$repo" "$current" ;;
     github-date-iso)
       # The current PV is YYYYMMDD but the release tag is YYYY-MM-DD; avoid
       # the helper's generic current-version fallback comparison here.
-      latest=$(get_latest_stable "$repo")
-      [[ -z "$latest" || "$latest" == "null" ]] && continue
-      ;;
+      get_latest_stable "$repo" ;;
     *)
-      latest=$(get_latest_stable "$repo" "$current")
-      [[ -z "$latest" || "$latest" == "null" ]] && continue
-      ;;
+      get_latest_stable "$repo" "$current" ;;
   esac
+}
 
-  if [[ "${type:-github}" == "github-prism-build" ]]; then
+updates_found=0
+lookup_errors=0
+
+# Report a lookup that failed or found nothing. The ::error:: prefix makes GitHub
+# Actions show it as an annotation. The entry is skipped, never reported as current.
+lookup_error() {
+  lookup_errors=$((lookup_errors + 1))
+  echo "::error::check-updates: $1: $2" >&2
+}
+
+load_comfy_pins
+
+for entry in "${PKGS[@]}"; do
+  IFS='|' read -r pkg repo prefix type <<< "$entry"
+  type="${type:-github}"
+
+  current=$(get_current_version "$pkg" || true)
+  if [[ -z "$current" ]]; then
+    lookup_error "$pkg" "no release ebuild found in the overlay"
+    continue
+  fi
+
+  case "$type" in
+    comfy-pin)     pin_error="$COMFY_PIN_ERROR" ;;
+    comfy-pin-sub) pin_error="${COMFY_PIN_ERROR:-$SUB_PIN_ERROR}" ;;
+    *)             pin_error="" ;;
+  esac
+  if [[ -n "$pin_error" ]]; then
+    lookup_error "$pkg" "$pin_error"
+    continue
+  fi
+
+  if ! latest=$(lookup_latest "$type" "$repo" "$current"); then
+    lookup_error "$pkg" "could not query the ${type} source ${repo}"
+    continue
+  fi
+  if [[ -z "$latest" || "$latest" == "null" ]]; then
+    lookup_error "$pkg" "no version found for ${repo}"
+    continue
+  fi
+
+  if [[ "$type" == "github-prism-build" ]]; then
     cur="$current"
     if [[ "$latest" =~ ^prism-b([0-9]+)-[[:xdigit:]]+$ ]]; then
       lat="${BASH_REMATCH[1]}"
     else
+      lookup_error "$pkg" "unrecognised Prism tag ${latest}"
       continue
     fi
   else
@@ -416,20 +460,21 @@ for entry in "${PKGS[@]}"; do
   # Gentoo versions cannot represent an upstream release counter with a
   # hyphen because that syntax is reserved for ebuild revisions. Map tags such
   # as 20260620-1 to the corresponding Gentoo PV 20260620.1 for comparison.
-  if [[ "${type:-github}" == "github-date-hyphen" ]]; then
+  if [[ "$type" == "github-date-hyphen" ]]; then
     lat="${lat/-/.}"
   fi
 
-  if [[ "${type:-github}" == "github-kwin-glass" ]]; then
+  if [[ "$type" == "github-kwin-glass" ]]; then
     if [[ "$lat" =~ ^([0-9]{8})-([0-9]+(\.[0-9]+)*)-support$ ]]; then
       lat="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
     else
+      lookup_error "$pkg" "unrecognised KWin Glass tag ${latest}"
       continue
     fi
   fi
 
   # Upstream tags use YYYY-MM-DD while the ebuild PV uses Gentoo's YYYYMMDD.
-  if [[ "${type:-github}" == "github-date-iso" ]]; then
+  if [[ "$type" == "github-date-iso" ]]; then
     lat="${lat//-/}"
   fi
 
@@ -456,7 +501,7 @@ for entry in "${PKGS[@]}"; do
   fi
 
   updates_found=$((updates_found + 1))
-  case "${type:-github}" in
+  case "$type" in
     jetbrains)
       echo "UPDATE: ${pkg}: ${current} -> ${latest}  (https://www.jetbrains.com/${pkg##*/}/download/)"
       ;;
@@ -472,14 +517,21 @@ for entry in "${PKGS[@]}"; do
     openai-deb|claude-deb)
       echo "UPDATE: ${pkg}: ${current} -> ${latest}  (${repo})"
       ;;
-    pypi)
-      echo "UPDATE: ${pkg}: ${current} -> ${latest}  (https://pypi.org/project/${repo}/)"
+    comfy-pin)
+      echo "UPDATE: ${pkg}: ${current} -> ${latest}  (https://github.com/Comfy-Org/ComfyUI/blob/${COMFY_REF}/requirements.txt)"
+      ;;
+    comfy-pin-sub)
+      echo "UPDATE: ${pkg}: ${current} -> ${latest}  (pinned by comfyui-workflow-templates ${COMFY_PINS[comfyui-workflow-templates]} in ComfyUI ${COMFY_REF})"
       ;;
     *)
       echo "UPDATE: ${pkg}: ${current} -> ${latest}  (https://github.com/${repo}/tags)"
       ;;
   esac
 done
+
+if [[ $lookup_errors -gt 0 ]]; then
+  echo "check-updates: ${lookup_errors} lookup(s) failed; the entries reported above were not checked." >&2
+fi
 
 if [[ $updates_found -gt 0 ]]; then
   echo ""
