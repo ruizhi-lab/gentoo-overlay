@@ -5,15 +5,16 @@ EAPI=8
 
 inherit cmake cuda toolchain-funcs
 
-LLAMA_COMMIT="b81c99b479d4c24e5eeca10de99032ebd343ef8f"
+# llama.cpp commit pinned by upstream in backends/versions.json.
+LLAMA_COMMIT="7fe450e19305b828c199d602c23a8337aaa1f03b"
 
 DESCRIPTION="CUDA llama.cpp runtime with tiered KV memory for long contexts"
-HOMEPAGE="https://github.com/kvmem/kvmem-llama.cpp"
+HOMEPAGE="https://github.com/kvmem/kvmem"
 SRC_URI="
-	https://github.com/kvmem/kvmem-llama.cpp/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz
+	https://github.com/kvmem/kvmem/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz
 	https://github.com/ggml-org/llama.cpp/archive/${LLAMA_COMMIT}.tar.gz -> llama.cpp-${LLAMA_COMMIT}.tar.gz
 "
-S="${WORKDIR}/kvmem-llama.cpp-${PV}"
+S="${WORKDIR}/kvmem-${PV}"
 
 LICENSE="Apache-2.0 MIT"
 SLOT="0"
@@ -42,10 +43,12 @@ pkg_setup() {
 }
 
 src_prepare() {
-	rmdir llama.cpp || die
-	mv "${WORKDIR}/llama.cpp-${LLAMA_COMMIT}" llama.cpp || die
-	pushd llama.cpp >/dev/null || die
-	eapply "${S}/patches/llama-kvmem-current.patch"
+	# The llama.cpp backend lives in backends/llamacpp, where upstream applies
+	# its KVMem integration patch to the pinned commit.
+	rmdir backends/llamacpp || die
+	mv "${WORKDIR}/llama.cpp-${LLAMA_COMMIT}" backends/llamacpp || die
+	pushd backends/llamacpp >/dev/null || die
+	eapply "${S}/backends/patches/llamacpp-kvmem.patch"
 	popd >/dev/null || die
 
 	cuda_src_prepare
@@ -71,7 +74,6 @@ src_configure() {
 		-DLLAMA_OPENSSL=OFF
 		# The server needs the mtmd target defined by llama.cpp/tools.
 		-DLLAMA_BUILD_TOOLS=ON
-		-DLLAMA_BUILD_UI=OFF
 	)
 	if [[ -n ${CMAKE_CUDA_ARCHITECTURES} ]]; then
 		mycmakeargs+=( -DCMAKE_CUDA_ARCHITECTURES="${CMAKE_CUDA_ARCHITECTURES}" )
@@ -103,6 +105,6 @@ src_install() {
 	# Keep patched llama/ggml private and avoid installing their SDK or tools.
 	dobin "${BUILD_DIR}/bin/llama-kvmem-cli" "${BUILD_DIR}/bin/llama-kvmem-server"
 	dodoc README.md VERSION
-	newdoc llama.cpp/LICENSE LICENSE.llama.cpp
+	newdoc backends/llamacpp/LICENSE LICENSE.llama.cpp
 	dodoc "${FILESDIR}/README.gentoo"
 }

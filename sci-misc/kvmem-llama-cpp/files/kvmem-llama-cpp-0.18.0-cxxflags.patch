@@ -1,5 +1,5 @@
 From: Ruizhi Zhong <ruizhi.zhong88@gmail.com>
-Date: Fri, 2 Oct 2026 00:15:00 +0800
+Date: Wed, 28 Oct 2026 22:13:39 +0800
 Subject: [PATCH] cmake: accept externally supplied CXXFLAGS
 
 Gentoo's cmake.eclass clears CMAKE_CXX_FLAGS_RELEASE and supplies the user's
