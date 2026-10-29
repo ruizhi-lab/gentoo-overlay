@@ -399,7 +399,7 @@ src_install() {
 
 	dodoc README.md
 	docinto "${PN}"
-	dodoc docs/MANAGEMENT_PROTOCOL.md docs/AMD_HIP.md docs/INSTALL.md
+	dodoc docs/AMD_HIP.md docs/INSTALL.md docs/MANAGEMENT_PROTOCOL.md docs/TERMINAL_LAUNCH.md
 	dodoc "${FILESDIR}/README.gentoo"
 }
 

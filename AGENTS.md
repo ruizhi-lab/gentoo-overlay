@@ -143,3 +143,72 @@ explicitly requires otherwise.
 - Keep optional Cockpit integrations behind their USE flags, and ensure all
   required account, service, and runtime dependencies are available from the
   configured repository masters before claiming the packages are buildable.
+
+### Strata
+
+- Package location: `sci-ml/strata`. Strata is an inference engine plus a Python
+  terminal and API server, so it belongs in `sci-ml` (machine learning and NLP)
+  rather than `sci-misc`, which is the fallback for packages that fit no other
+  `sci-*` category. `sci-ml/ollama` and `sci-ml/ggml` are the neighbours.
+- Follow upstream stable GitHub releases (tags are `v<PV>`, so the `github`
+  update-check type needs the `v` prefix). Upstream also tags patch releases
+  such as `v0.2.7.1` without publishing them as releases; take the release
+  that `releases` reports, not the highest tag.
+- ggml comes from the llama.cpp commit pinned in upstream's
+  `third_party/ggml/VERSION.txt`. When bumping, re-read that file and update
+  `LLAMA_COMMIT`: leaving `STRATA_GGML_DIR` unset makes CMake fetch the tree
+  over the network at configure time, which fails in the build sandbox, and a
+  different commit changes the MMQ scheduler the engine's own kernels are
+  written against. Keep the pinned tree as a distfile and pass
+  `-DSTRATA_GGML_DIR` so no fetch happens.
+- Do not add a `system-ggml` USE flag or link against `sci-ml/ggml`. The engine
+  links ggml statically from its pinned tree and installs no headers or
+  libraries, so it already coexists with `sci-ml/ggml` and `sci-misc/llama-cpp`;
+  using the system library would break that and mix incompatible versions.
+- The engine is installed as the component package the terminal verifies
+  (`<version>-<platform>-<backend>/` holding `engine-component.json`, which
+  records the SHA-256 of every file). Keep `RESTRICT="strip"`; stripping or
+  splitdebug rewrites the binaries after `src_install` and the terminal then
+  refuses to start them. Build the package with upstream's own
+  `packaging/package_engine.py` rather than reproducing the manifest by hand.
+- Never call `cmake --install`; only `cmake --build` and copy the programs. That
+  is what keeps ggml and llama out of `/usr/include` and `/usr/$(get_libdir)`.
+- `USE="vision"` builds `tools/vision` into the picture reader. Build it from
+  the same architecture list as the engine and record that list as
+  `vision_archs` in `BUILD.json`: `package_engine.py` refuses a CUDA package
+  whose reader does not cover the engine's architectures, and a reader carried
+  over from another build dies on a card the engine itself handles.
+- On HIP the vision project renames its only target to `strata-vision-hip`, so
+  the CPU fallback and the GPU reader come from two configure runs of the same
+  project, as upstream's `packaging/build_hip_linux.sh` does. A single run
+  yields only the GPU reader.
+- `sci-libs/hipBLASLt` installs `hipblaslt-version.h` flat as
+  `<prefix>/include/hipblaslt-version.h`, but upstream's
+  `packaging/stage_tuning.py` looks under `include/hipblaslt/`. Read the
+  version from the flat header and pass it with `--version` instead of relying
+  on `--rocm`.
+- Upstream's HIP backend refuses architectures it does not know
+  (`cmake/hip_backend.cmake`). Take the target list from `rocm.eclass`'s
+  `amdgpu_targets_*` USE_EXPAND so it matches the installed ROCm, and never let
+  CMake or hipcc probe the build host's cards.
+- CUDA builds take `CMAKE_CUDA_ARCHITECTURES` from `/etc/portage/env` rather
+  than upstream's default (sm_86, sm_89 and the sm_120 PTX), because a binary
+  without code for the user's card stops at startup.
+- The terminal's file set is the one `packaging/package_terminal.py` stages:
+  `strata.py`, `strata_cli`, `strata_control`, `serve`, `tools/` (the
+  `TOOLS_SUBSET` three, since `strata_control` imports `tools.*` from the
+  install root), `ref/load.py`, `data/`, `bench/prompts/standard-v1` and the two
+  docs. Drop the API server's `test_*.py` modules. Re-check that list when
+  bumping: a missing module fails at run time, not at build time.
+- Keep `files/redact-portage-managed.patch`, which makes `strata install` and
+  `strata update` refuse under Portage and name emerge instead. Re-derive the
+  hunks against each new tarball with `patch --dry-run --fuzz=0`; upstream
+  rewrites these functions often, and the reference ebuilds in the wild carry
+  stale versions.
+- The launcher must keep the component folder at `/usr/lib/strata/components`
+  and point the install and data folders at the caller's XDG data directory.
+  Strata otherwise derives them from the component folder, which is root-owned
+  here, and `strata install`/`update` need those to be the user's own.
+- Do not install the terminal under a path that the component folder also
+  lives in: `/usr/lib/strata` must stay a real directory holding `components/`,
+  with the Python code in `/usr/share/strata`.
