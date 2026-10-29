@@ -62,6 +62,7 @@ PKGS=(
   "sci-ml/einops|arogozhnikov/einops|v|github"
   "sci-ml/kornia|kornia/kornia|v|github"
   "sci-ml/spandrel|chaiNNer-org/spandrel|v|github"
+  "sci-ml/strata|Niko1221/Strata|v|github"
   "sci-ml/torchaudio|pytorch/audio|v|github"
   "sci-ml/torchsde|google-research/torchsde|v|github"
   "media-fonts/harmonyos-sans|ttf-harmonyos-sans||aur"
