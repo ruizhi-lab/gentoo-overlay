@@ -150,10 +150,16 @@ explicitly requires otherwise.
   terminal and API server, so it belongs in `sci-ml` (machine learning and NLP)
   rather than `sci-misc`, which is the fallback for packages that fit no other
   `sci-*` category. `sci-ml/ollama` and `sci-ml/ggml` are the neighbours.
-- Follow upstream stable GitHub releases (tags are `v<PV>`, so the `github`
-  update-check type needs the `v` prefix). Upstream also tags patch releases
-  such as `v0.2.7.1` without publishing them as releases; take the release
-  that `releases` reports, not the highest tag.
+- Version bumps follow upstream tags, not the release list. Upstream ships
+  patch releases as tags only: `v0.2.7.1` is 127 commits newer than `v0.2.7`
+  and is newer than the `v0.2.7` GitHub release, whose notes fold the 0.2.7.1
+  section in. Always compare `tags` before bumping, and check which tag the
+  tarball actually corresponds to.
+- Because of that, the `github` update-check type in
+  `.github/scripts/check-updates.sh` compares against releases and will sit
+  quietly on an older PV once a release has a newer tag-only successor. Treat
+  its silence as "no newer release", not "current": confirm against the tag
+  list when touching the package.
 - ggml comes from the llama.cpp commit pinned in upstream's
   `third_party/ggml/VERSION.txt`. When bumping, re-read that file and update
   `LLAMA_COMMIT`: leaving `STRATA_GGML_DIR` unset makes CMake fetch the tree
