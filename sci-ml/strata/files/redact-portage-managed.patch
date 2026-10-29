@@ -1,0 +1,72 @@
+From: Ruizhi Zhong <ruizhi.zhong88@gmail.com>
+Date: Wed, 29 Oct 2026 23:00:00 +0800
+Subject: [PATCH] honour STRATA_PACKAGE_MANAGED=1 in install and update
+
+Strata ships two ways of acquiring things: `strata install` hands over to the
+installer of a full source folder (pip, the engine, the models), and `strata
+update` / `strata components update|rollback|install-file` write a new engine
+into the component folder. Under Portage both are wrong: the engine is merged
+as a component package by this ebuild, and a self-update would overwrite files
+that the package database owns.
+
+The launcher installed by the ebuild exports STRATA_PACKAGE_MANAGED=1. When it
+is set, both commands refuse with exit code 5 and name Portage instead, while
+`rollback` and `install-file` still work when they are pointed at a folder the
+calling user owns (--components-dir / STRATA_COMPONENTS_DIR), which keeps
+per-user engine experiments possible without touching /usr.
+
+A user who wants the upstream behaviour back can export
+STRATA_PACKAGE_MANAGED=0.
+
+Upstream status: not submitted; Gentoo packaging only.
+---
+--- a/strata_cli/cli.py
++++ b/strata_cli/cli.py
+@@ -2065,6 +2065,10 @@
+     """The one place the terminal acquires anything: it hands over to the installer (setup.py) of a full Strata
+     folder, which is where pip, the engine and the models are fetched. A folder without it (the terminal archive)
+     says so and names what to do instead."""
++    if os.environ.get("STRATA_PACKAGE_MANAGED") == "1":
++        return _error("this Strata is installed and managed by Portage (sci-ml/strata): the engine is updated "
++                      "with emerge, not `strata install`. Set STRATA_PACKAGE_MANAGED=0 to run this folder's "
++                      "installer anyway.", 5)
+     installer = Path(os.environ.get("STRATA_INSTALL_DIR") or ROOT) / "setup.py"
+     if not installer.is_file():
+         return _error("this folder has no installer (setup.py). Engines, models and updates are installed from a "
+--- a/strata_cli/update_cmd.py
++++ b/strata_cli/update_cmd.py
+@@ -171,6 +171,14 @@
+         print("  An engine is serving; an update waits until it stops.")
+ 
+ 
++def _component_dir_user_owned(path: Path) -> bool:
++    """A component folder the current user may write to: it exists and is writable, or its parent is (so it can be created)."""
++    if path.exists():
++        return path.is_dir() and os.access(path, os.W_OK)
++    parent = path.parent
++    return parent.exists() and os.access(parent, os.W_OK)
++
++
+ def run(a) -> int:
+     from strata_control import acquisition, engine_component as ec, feed as feedmod, signing, updater
+     machine = a.output in ("json", "jsonl")
+@@ -182,6 +190,19 @@
+             print(f"strata: {message}", file=sys.stderr)
+         return code
+ 
++    if os.environ.get("STRATA_PACKAGE_MANAGED") == "1":
++        sub = getattr(a, "components_command", None)
++        if a.command == "update" or sub == "update":
++            return fail("this Strata is installed and managed by Portage (sci-ml/strata); update the engine "
++                        "with emerge, not `strata update`. Set STRATA_PACKAGE_MANAGED=0 to use the self-update "
++                        "feed anyway.", 5)
++        if sub in ("rollback", "install-file"):
++            target = Path(a.components_dir) if a.components_dir else None
++            if target is None or not _component_dir_user_owned(target):
++                return fail("this Strata is installed and managed by Portage (sci-ml/strata); the system "
++                            "component folder is read-only. To rollback or install an engine file, pass "
++                            "--components-dir pointing at a folder you own (and set STRATA_COMPONENTS_DIR to it), "
++                            "or set STRATA_PACKAGE_MANAGED=0.", 5)
+     root = Path(a.components_dir) if a.components_dir else ec.components_dir()
+     try:
+         hardware = updater.detect_hardware()

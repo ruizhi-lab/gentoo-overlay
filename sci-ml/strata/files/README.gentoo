@@ -1,0 +1,64 @@
+Strata on Gentoo
+================
+
+This package installs two things from one upstream source: the inference engine
+and, with USE="terminal", the `strata` terminal and API server that start it.
+
+The engine
+----------
+The engine is built for exactly one GPU backend:
+
+    USE="cuda"   NVIDIA, through the CUDA toolkit
+    USE="hip"    AMD, through the ROCm HIP toolchain (one or more amdgpu_targets_*)
+
+The two are mutually exclusive. Without either flag the package does not build:
+a CPU-only engine is not something upstream ships.
+
+CUDA users have to say which cards the engine is for. The toolkit builds for
+upstream's default (sm_86, sm_89 and the sm_120 PTX of RTX 50) unless told
+otherwise, and a binary that has no code for your card stops at startup with a
+message instead of running slowly. Set the list in /etc/portage/env/strata and
+pull it in with /etc/portage/package.env:
+
+    # /etc/portage/env/strata
+    CMAKE_CUDA_ARCHITECTURES="89-real;120-real"
+
+    # /etc/portage/package.env
+    sci-ml/strata strata
+
+ROCm users select the cards with the amdgpu_targets_* flags; Strata's HIP path
+only accepts the wave32 architectures it knows (gfx10.. and gfx11.., gfx12..).
+`emerge --info` and the eclass list which of those the installed ROCm supports.
+AMD cards need CONFIG_HSA_AMD in the kernel.
+
+The engine is installed as a component under /usr/lib/strata/components, in the
+layout upstream's own packaging produces, with a SHA-256 manifest that the
+terminal verifies at every start. That is why the package sets RESTRICT="strip":
+rewriting the binaries afterwards would break the check.
+
+The terminal
+------------
+`strata launch` picks a model, downloads it and writes a run config; `strata
+serve` runs the OpenAI/Anthropic-compatible API. Both live in the calling user's
+~/.local/share/strata, so nothing is written to /usr at run time.
+
+The engine belongs to Portage here. `strata install` and `strata update` refuse
+to run and point at emerge instead (files/redact-portage-managed.patch). To
+experiment with a per-user engine, export
+
+    STRATA_PACKAGE_MANAGED=0
+    STRATA_COMPONENTS_DIR=$HOME/.local/share/strata/components
+
+The picture reader is not built
+-------------------------------
+Upstream's `strata-vision` reader is a separate CMake project that builds ggml a
+second time, for the CPU and again for the GPU. This package does not build it,
+so Strata answers text only and a picture in a prompt is refused with a clear
+message. The package prints that at the end of the merge.
+
+Models
+------
+Model weights are not packaged and are not downloaded by the ebuild. `strata
+launch` fetches what you choose into your own data folder; the upstream model
+notes are in the engine's docs directory and at
+https://github.com/Niko1221/Strata.
