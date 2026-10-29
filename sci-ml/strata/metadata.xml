@@ -18,6 +18,7 @@
 		<flag name="cuda">Build the engine for NVIDIA GPUs with the CUDA toolkit</flag>
 		<flag name="hip">Build the engine for AMD GPUs with the ROCm HIP toolchain</flag>
 		<flag name="terminal">Install the strata terminal and API server, which need the Python dependencies; without it only the engine component is installed</flag>
+		<flag name="vision">Build the picture reader (strata-vision) from tools/vision, so a prompt can carry images; without it the engine answers text only</flag>
 	</use>
 	<upstream>
 		<remote-id type="github">Niko1221/Strata</remote-id>

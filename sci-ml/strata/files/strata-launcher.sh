@@ -26,4 +26,4 @@ set -eu
 : "${STRATA_PACKAGE_MANAGED:=1}"
 export STRATA_COMPONENTS_DIR STRATA_INSTALL_DIR STRATA_DATA_DIR STRATA_PACKAGE_MANAGED
 
-exec python3 /usr/lib/strata/strata.py "$@"
+exec python3 /usr/share/strata/strata.py "$@"

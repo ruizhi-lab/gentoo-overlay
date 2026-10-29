@@ -49,12 +49,21 @@ experiment with a per-user engine, export
     STRATA_PACKAGE_MANAGED=0
     STRATA_COMPONENTS_DIR=$HOME/.local/share/strata/components
 
-The picture reader is not built
--------------------------------
-Upstream's `strata-vision` reader is a separate CMake project that builds ggml a
-second time, for the CPU and again for the GPU. This package does not build it,
-so Strata answers text only and a picture in a prompt is refused with a clear
-message. The package prints that at the end of the merge.
+Pictures
+--------
+USE="vision" (on by default) builds the picture reader `strata-vision` from
+tools/vision, so a prompt can carry images. It is a second CMake project that
+builds llama.cpp's mtmd and ggml again, for the same architectures as the
+engine: a reader carried over from a different build fails on a card the engine
+itself handles.
+
+On CUDA there is one reader, which reads on the GPU when the engine starts it
+with --gpu and on the CPU otherwise. On HIP there are two, as upstream's own
+packaging ships them: the CPU reader `strata-vision`, which starts even where
+the HIP runtime does not load, and `strata-vision-hip` for the card, which the
+terminal prefers. Both live in the engine component folder.
+
+With USE="-vision" the package carries no reader and Strata answers text only.
 
 Models
 ------

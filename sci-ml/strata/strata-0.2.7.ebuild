@@ -12,7 +12,7 @@ CMAKE_BUILD_TYPE=Release
 # Strata's HIP backend needs the ROCm 7 wave32 compiler stack (gfx1103, gfx115x and gfx120x targets).
 ROCM_VERSION="7.0"
 
-inherit cmake cuda python-single-r1 rocm
+inherit cmake cuda multiprocessing python-single-r1 rocm
 
 # Strata takes ggml from a pinned llama.cpp commit (third_party/ggml/VERSION.txt upstream) and builds its
 # own prompt kernels and CPU experts from that exact tree: a llama.cpp release does not carry the same
@@ -32,7 +32,7 @@ LLAMA_S="${WORKDIR}/llama.cpp-${LLAMA_COMMIT}"
 LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64"
-IUSE="+cuda hip +terminal"
+IUSE="+cuda hip +terminal +vision"
 REQUIRED_USE="
 	?? ( cuda hip )
 	hip? ( ${ROCM_REQUIRED_USE} )
@@ -143,6 +143,77 @@ src_configure() {
 	cmake_src_configure
 }
 
+# The picture reader, tools/vision/strata-vision: its own CMake project, because it links llama.cpp's
+# mtmd beside the engine's ggml. It is built for the same architectures as the engine on purpose: a
+# reader carried over from another build dies with "device kernel image is invalid" on a card the
+# engine itself handles (#3669), and package_engine.py refuses such a package.
+#
+# A CUDA build has one reader, strata-vision, which reads on the GPU when started with --gpu and on the
+# CPU otherwise. A HIP build has two, exactly as upstream's own packaging ships them: the CPU reader
+# strata-vision, which starts on every PC, and strata-vision-hip for the card, which the terminal
+# prefers when the HIP runtime loads.
+#
+# The HIP project renames its single target to strata-vision-hip, so the two readers come from two
+# configure runs of the same project (upstream's packaging/build_hip_linux.sh does the same): one with
+# the HIP backend on, one with it off.
+build_vision_project() {
+	local build="$1"
+	shift
+
+	# A second configure of a second project: cmake_src_configure() would reuse BUILD_DIR, so this one
+	# is invoked directly, the way upstream's packaging/build_*.sh does it.
+	local -x CMAKE_BUILD_TYPE=Release
+	if use cuda; then
+		local -x CUDAHOSTCXX="$(cuda_gccdir)"
+	fi
+
+	# -DSTRATA_PORTABLE=ON keeps the reader on an AVX2 baseline, like the engine, instead of the build
+	# host's instruction set.
+	cmake -S "${S}/tools/vision" -B "${build}" -G Ninja \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DLLAMA_DIR="${LLAMA_S}" \
+		-DSTRATA_PORTABLE=ON \
+		"$@" || die "configuring strata-vision (${build##*/}) failed"
+
+	cmake --build "${build}" --target strata-vision -j "$(makeopts_jobs)" \
+		|| die "building strata-vision (${build##*/}) failed"
+}
+
+compile_vision() {
+	local -a archargs=()
+
+	if use hip; then
+		export ROCM_TARGET_LST="${T}/rocm-targets-vision.lst"
+		printf '%s\n' "${AMDGPU_TARGETS[@]}" > "${ROCM_TARGET_LST}" || die
+		rocm_add_sandbox
+		archargs=(
+			-DSTRATA_VISION_HIP=ON
+			-DSTRATA_VISION_HIP_ARCHS="$(get_amdgpu_flags)"
+			-DCMAKE_HIP_COMPILER="$(hipconfig -l)/clang++"
+		)
+	elif use cuda; then
+		archargs=(
+			-DSTRATA_VISION_CUDA=ON
+			# ggml-cuda wants NCCL for multi-GPU collectives, which a single-card reader never uses
+			-DGGML_CUDA_NCCL=OFF
+		)
+		[[ -n ${CMAKE_CUDA_ARCHITECTURES} ]] &&
+			archargs+=( -DCMAKE_CUDA_ARCHITECTURES="${CMAKE_CUDA_ARCHITECTURES}" )
+	fi
+
+	if use cuda; then
+		cuda_add_sandbox
+		addpredict "/dev/char/"
+	fi
+
+	build_vision_project "${WORKDIR}/vision_build" ${archargs[@]+"${archargs[@]}"}
+
+	if use hip; then
+		# the CPU fallback: the same project with no GPU backend at all
+		build_vision_project "${WORKDIR}/vision_build_cpu" -DSTRATA_VISION_HIP=OFF
+	fi
+}
+
 src_compile() {
 	# The default target also carries the parity and benchmark programs the terminal never starts.
 	if use hip; then
@@ -150,6 +221,8 @@ src_compile() {
 	else
 		cmake_build strata
 	fi
+
+	use vision && compile_vision
 }
 
 # The component folder holds one directory per engine, <version>-<platform>-<backend>/, holding the
@@ -167,13 +240,27 @@ package_engine() {
 	cp "${BUILD_DIR}/strata" "${stage}/" || die
 	use hip && cp "${BUILD_DIR}/strata-device" "${stage}/" || die
 
+	# The readers, and the architectures they were built for: package_engine.py refuses a CUDA package
+	# whose reader does not cover the engine's architectures, so BUILD.json records vision_archs.
+	local vision_json=""
+	if use vision; then
+		if use hip; then
+			# the HIP project names its single target strata-vision-hip; the CPU reader is the second run
+			cp "${WORKDIR}/vision_build/bin/strata-vision-hip" "${stage}/" || die
+			cp "${WORKDIR}/vision_build_cpu/bin/strata-vision" "${stage}/" || die
+		else
+			cp "${WORKDIR}/vision_build/bin/strata-vision" "${stage}/" || die
+		fi
+		vision_json=", \"vision_archs\": \"$(printf '%s;' "${arches[@]}" | sed 's/;$//')\""
+	fi
+
 	arch_json=$(printf '"%s", ' "${arches[@]}")
 	cat > "${stage}/BUILD.json" <<-EOF || die
 	{
 	 "version": "$(engine_version)",
 	 "source": "Gentoo sci-ml/strata-${PV}",
 	 "portable": true,
-	 "archs": [${arch_json%, }]
+	 "archs": [${arch_json%, }]${vision_json}
 	}
 	EOF
 
@@ -189,8 +276,8 @@ package_engine() {
 				allow+=( --allow-lib "${lib}" ) ;;
 		esac
 	done < <(
-		for bin in "${stage}/strata" "${stage}/strata-device"; do
-			[[ -f ${bin} ]] || continue
+		for bin in "${stage}"/*; do
+			[[ -f ${bin} && -x ${bin} ]] || continue
 			readelf -d "${bin}" | sed -n 's/.*(NEEDED).*\[\(.*\)\]/\1/p'
 		done | sort -u
 	)
@@ -233,16 +320,15 @@ package_engine() {
 			--tables "${S}/tools/hip" || die
 	fi
 
-	# --no-picture-reader: strata-vision is a second CMake project that builds ggml again for the CPU and
-	# once more for the GPU. Without it Strata answers text only, which pkg_postinst says.
+	# A package without the reader answers text only; package_engine.py says so itself when --src has no
+	# strata-vision, so --no-picture-reader is not needed either way.
 	python3 -I packaging/package_engine.py \
 		--src "${stage}" \
 		--backend "${backend}" \
 		--version "$(engine_version)" \
 		--platform linux-x86_64 \
-		--out "${ED}/usr/$(get_libdir)/${PN}/components/engine" \
+		--out "${ED}/usr/lib/${PN}/components/engine" \
 		--build-id "gentoo-${PF}" \
-		--no-picture-reader \
 		"${archargs[@]}" "${allow[@]}" || die
 }
 
@@ -288,9 +374,10 @@ install_terminal() {
 	python_fix_shebang "${ED}/usr/bin/${PN}"
 	python_optimize "${ED}${root}"
 
-	# The launcher and serve/server.py resolve the API server's web assets and the terminal's modules
-	# from a fixed libexec path; /usr/share is the only place a merged package may keep them.
-	dosym "../../share/${PN}" "/usr/$(get_libdir)/${PN}"
+	# The terminal resolves its modules, its web assets and tools/ from the folder holding strata.py.
+	# It is installed under /usr/share, so the launcher points at it there; nothing else claims that
+	# path, and the engine's component folder below /usr/lib/${PN} stays a real directory.
+	dosym "../../share/${PN}" "/usr/lib/${PN}/terminal"
 }
 
 src_install() {
@@ -325,7 +412,7 @@ pkg_postinst() {
 	elog "OpenAI/Anthropic-compatible API on localhost. Models and run configs live in the"
 	elog "calling user's ~/.local/share/strata."
 	elog
-	elog "The engine is a system component under /usr/$(get_libdir)/${PN}/components,"
+	elog "The engine is a system component under /usr/lib/${PN}/components,"
 	elog "upgraded with Portage. 'strata install' and 'strata update' refuse to run and name"
 	elog "Portage instead; export STRATA_PACKAGE_MANAGED=0 with a writable"
 	elog "STRATA_COMPONENTS_DIR to run a per-user engine."
@@ -333,6 +420,9 @@ pkg_postinst() {
 		elog
 		elog "USE=\"-terminal\" is set: only the engine component was installed."
 	fi
-	elog
-	ewarn "The picture reader (strata-vision) is not built, so Strata answers text only."
+	if ! use vision; then
+		elog
+		ewarn "USE=\"-vision\" is not set: the package carries no picture reader"
+		ewarn "(strata-vision), so Strata answers text only."
+	fi
 }
