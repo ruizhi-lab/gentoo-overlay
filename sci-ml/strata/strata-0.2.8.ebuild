@@ -398,12 +398,16 @@ install_terminal() {
 }
 
 src_install() {
+	# The same list the engine and the reader were configured with, so BUILD.json's archs and
+	# vision_archs describe what was actually compiled and never a guess.
 	local -a arches=()
 	if use hip; then
 		arches=( "${AMDGPU_TARGETS[@]}" )
 	else
-		local arch norm
-		for arch in ${CMAKE_CUDA_ARCHITECTURES:-86 89 120}; do
+		local arch norm archs_list
+		archs_list=$(cuda_architectures)
+		# the list is ';'-separated (or spaced by hand), so split on both
+		for arch in ${archs_list//;/ }; do
 			norm=${arch%%-*}
 			norm=${norm#sm_}
 			norm=${norm#compute_}
