@@ -31,7 +31,9 @@ LLAMA_S="${WORKDIR}/llama.cpp-${LLAMA_COMMIT}"
 
 LICENSE="MIT"
 SLOT="0"
-KEYWORDS="~amd64 ~arm64"
+# ~arm64 (the DGX Spark builds) is left out until someone has merged this there: the engine, the
+# reader and the component platform key are all in place, but nothing has run it on that hardware.
+KEYWORDS="~amd64"
 IUSE="+cuda hip +terminal +vision"
 REQUIRED_USE="
 	?? ( cuda hip )
@@ -67,6 +69,7 @@ CDEPEND="
 			>=dev-python/pyyaml-6.0.3[${PYTHON_USEDEP}]
 			dev-python/regex[${PYTHON_USEDEP}]
 			>=dev-python/requests-2.34[${PYTHON_USEDEP}]
+			>=dev-python/rich-14[${PYTHON_USEDEP}]
 			dev-python/textual[${PYTHON_USEDEP}]
 			dev-python/tqdm[${PYTHON_USEDEP}]
 			>=dev-python/truststore-0.10[${PYTHON_USEDEP}]
@@ -114,6 +117,13 @@ pkg_setup() {
 # The value is always a concrete list, never CMake's "native", because the same string also describes
 # the package in BUILD.json and a manifest cannot say "native".
 cuda_architectures() {
+	# Called from src_configure, the reader build and src_install; the fallback notice belongs once,
+	# in src_configure, and the three calls must return the same value.
+	if [[ -n ${_STRATA_CUDA_ARCHS} ]]; then
+		echo "${_STRATA_CUDA_ARCHS}"
+		return
+	fi
+
 	local archs="${CMAKE_CUDA_ARCHITECTURES:-${CUDAARCHS}}"
 
 	if [[ ${archs} == native || -z ${archs} ]]; then
@@ -137,6 +147,7 @@ CMAKE_CUDA_ARCHITECTURES in /etc/portage/env/${PN}, e.g. \"120-real\""
 		ewarn "\"89-real;120-real\"."
 	fi
 
+	_STRATA_CUDA_ARCHS=${archs}
 	echo "${archs}"
 }
 
@@ -188,6 +199,23 @@ src_configure() {
 		local -x CUDAHOSTCXX="$(cuda_gccdir)"
 		cuda_add_sandbox
 		addpredict "/dev/char/"
+	fi
+
+	# The architecture list the component manifest records: computed once here, from the same value
+	# CMake was given, so src_install never has to look at the machine again.
+	package_archs=()
+	if use hip; then
+		package_archs=( "${AMDGPU_TARGETS[@]}" )
+	else
+		local arch norm arch_list
+		arch_list=$(cuda_architectures)
+		# ';'-separated (or spaced by hand), so split on both
+		for arch in ${arch_list//;/ }; do
+			norm=${arch%%-*}
+			norm=${norm#sm_}
+			norm=${norm#compute_}
+			package_archs+=( "sm_${norm}" )
+		done
 	fi
 
 	cmake_src_configure
@@ -436,23 +464,9 @@ install_terminal() {
 }
 
 src_install() {
-	# The same list the engine and the reader were configured with, so BUILD.json's archs and
-	# vision_archs describe what was actually compiled and never a guess.
-	local -a arches=()
-	if use hip; then
-		arches=( "${AMDGPU_TARGETS[@]}" )
-	else
-		local arch norm archs_list
-		archs_list=$(cuda_architectures)
-		# the list is ';'-separated (or spaced by hand), so split on both
-		for arch in ${archs_list//;/ }; do
-			norm=${arch%%-*}
-			norm=${norm#sm_}
-			norm=${norm#compute_}
-			arches+=( "sm_${norm}" )
-		done
-	fi
-	package_engine "${arches[@]}"
+	# package_archs() was filled in src_configure from the same list the engine and the reader were
+	# built with, so BUILD.json's archs and vision_archs describe what was compiled, not a guess.
+	package_engine "${package_archs[@]}"
 
 	use terminal && install_terminal
 
