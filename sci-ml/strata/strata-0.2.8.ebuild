@@ -422,9 +422,11 @@ install_terminal() {
 	insinto "${root}"
 	doins "${T}/VERSION" "${T}/COMMIT"
 
+	# The launcher is a POSIX shell script that finds an interpreter and execs strata.py, so it keeps
+	# its #!/bin/sh: python_fix_shebang is for Python scripts and refuses any other shebang. The
+	# modules themselves are byte-compiled below.
 	exeinto /usr/bin
 	newexe "${FILESDIR}/${PN}-launcher.sh" ${PN}
-	python_fix_shebang "${ED}/usr/bin/${PN}"
 	python_optimize "${ED}${root}"
 
 	# The terminal resolves its modules, its web assets and tools/ from the folder holding strata.py.
