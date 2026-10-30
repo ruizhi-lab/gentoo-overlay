@@ -289,7 +289,9 @@ package_engine() {
 
 	mkdir -p "${stage}" || die
 	cp "${BUILD_DIR}/strata" "${stage}/" || die
-	use hip && cp "${BUILD_DIR}/strata-device" "${stage}/" || die
+	if use hip; then
+		cp "${BUILD_DIR}/strata-device" "${stage}/" || die
+	fi
 
 	# The readers, and the architectures they were built for: package_engine.py refuses a CUDA package
 	# whose reader does not cover the engine's architectures, so BUILD.json records vision_archs.
