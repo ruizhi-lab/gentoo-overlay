@@ -464,7 +464,7 @@ install_terminal() {
 }
 
 src_install() {
-	# package_archs() was filled in src_configure from the same list the engine and the reader were
+	# package_archs was filled in src_configure from the same list the engine and the reader were
 	# built with, so BUILD.json's archs and vision_archs describe what was compiled, not a guess.
 	package_engine "${package_archs[@]}"
 
