@@ -325,7 +325,7 @@ package_engine() {
 		case ${lib} in
 			libamdhip64.so.*|libamd_comgr.so.*|libhsa-runtime64.so.*|libhipblas.so.*|libhipblaslt.so.*|libhiprtc.so.*|librocblas.so.*)
 				allow+=( --allow-lib "${lib}" ) ;;
-			libcublas.so.*|libcublasLt.so.*)
+			libcudart.so.*|libcublas.so.*|libcublasLt.so.*|libcufft.so.*|libcurand.so.*|libcusparse.so.*|libcusolver.so.*|libnvrtc.so.*|libnvJitLink.so.*)
 				allow+=( --allow-lib "${lib}" ) ;;
 		esac
 	done < <(
