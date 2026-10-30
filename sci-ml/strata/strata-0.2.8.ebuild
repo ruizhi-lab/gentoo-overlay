@@ -19,7 +19,7 @@ inherit cmake cuda multiprocessing python-single-r1 rocm toolchain-funcs
 # MMQ scheduler. The tree is a distfile, so a build never downloads anything.
 LLAMA_COMMIT="3cf03257f219afbe7334045ff7c6a06ac68c627d"
 
-DESCRIPTION="Inference engine and terminal for Qwen3.8-Flash-Next and other GGUF models"
+DESCRIPTION="Inference engine and terminal for Qwen3.8-Flash-Next"
 HOMEPAGE="https://github.com/Niko1221/Strata"
 SRC_URI="
 	https://github.com/Niko1221/Strata/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz
@@ -484,6 +484,11 @@ pkg_postinst() {
 	elog "Run 'strata launch' to pick and download a model, or 'strata serve' for the"
 	elog "OpenAI/Anthropic-compatible API on localhost. Models and run configs live in the"
 	elog "calling user's ~/.local/share/strata."
+	elog
+	elog "The engine runs Qwen3.8-Flash-Next only: 'strata launch' offers its GSQ-RCO,"
+	elog "Q2_0 and UD quantizations, and 'strata models import' refuses any other GGUF"
+	elog "file, naming llama-server instead. Use sci-misc/kvmem-llama-cpp or"
+	elog "sci-misc/prism-llama-cpp for models of another family or size."
 	elog
 	elog "The engine is a system component under /usr/lib/${PN}/components,"
 	elog "upgraded with Portage. 'strata install' and 'strata update' refuse to run and name"

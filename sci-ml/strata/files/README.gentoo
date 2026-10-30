@@ -82,3 +82,24 @@ Model weights are not packaged and are not downloaded by the ebuild. `strata
 launch` fetches what you choose into your own data folder; the upstream model
 notes are in the engine's docs directory and at
 https://github.com/Niko1221/Strata.
+
+Strata runs one model family, not arbitrary GGUF files. Its catalogue in
+data/gguf_fingerprints.json has 17 entries under the qwen, swift, coder,
+unsloth and gyro keys, and every one of them is Qwen3.8-Flash-Next (qwen35moe)
+in a GSQ-RCO, Q2_0 or UD quantization, split into two shards with the exact
+upstream file names. Another model, including a different Qwen3.8 size such as
+Qwen3.8-27B (qwen35), is refused by `strata models import`:
+
+    this model type is not supported by the Strata engine (add it as a
+    Custom model API with llama-server instead)
+
+For those, a llama.cpp package is the tool - sci-misc/llama-cpp from guru, or
+sci-misc/kvmem-llama-cpp and sci-misc/prism-llama-cpp from this overlay: the
+engine here is the Flash-Next one and its kernels are written for it. An MTP
+drafter file (the -mtp.gguf beside a model) and an mmproj are parts of a
+supported selection, not models of their own, and importing either on its own
+is refused too.
+
+Let `strata launch` fetch a supported model rather than copying an existing
+GGUF into the data folder: it writes the run config the engine needs and
+prepares the pack, mtp and mmproj files beside it.

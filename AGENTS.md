@@ -150,6 +150,16 @@ explicitly requires otherwise.
   terminal and API server, so it belongs in `sci-ml` (machine learning and NLP)
   rather than `sci-misc`, which is the fallback for packages that fit no other
   `sci-*` category. `sci-ml/ollama` and `sci-ml/ggml` are the neighbours.
+- Strata runs one model family. `data/gguf_fingerprints.json` holds 17
+  selections under the qwen, swift, coder, unsloth and gyro keys and every one
+  is Qwen3.8-Flash-Next (`qwen35moe`), split into two shards with exact upstream
+  file names. Do not describe the package as running arbitrary GGUF models:
+  `strata models import` refuses anything else, including another Qwen3.8 size
+  such as the 27B (`qwen35`), with "this model type is not supported by the
+  Strata engine". DeepSeek-V4.1 needs `STRATA_BUILD_DSV41=ON`, which this
+  package does not build, so it is not available here either. Users with other
+  models want `sci-misc/kvmem-llama-cpp`, `sci-misc/prism-llama-cpp` or
+  `sci-misc/llama-cpp` from guru.
 - Version bumps follow upstream tags, not the release list. Upstream ships
   patch releases as tags only: `v0.2.7.1` is 127 commits newer than `v0.2.7`
   and is newer than the `v0.2.7` GitHub release, whose notes fold the 0.2.7.1

@@ -6,10 +6,12 @@
 		<email>ruizhi.zhong88@gmail.com</email>
 	</maintainer>
 	<longdescription>
-		Strata is an inference engine for Qwen3.8-Flash-Next, DeepSeek-V4.1-Flash
-		and other GGUF models on consumer NVIDIA and AMD hardware, with an
-		OpenAI/Anthropic-compatible API served on localhost and a terminal client
-		that picks, verifies and starts the engine.
+		Strata is an inference engine for Qwen3.8-Flash-Next on consumer NVIDIA and
+		AMD hardware, with an OpenAI/Anthropic-compatible API served on localhost
+		and a terminal client that picks, verifies and starts the engine.
+		The engine runs that one model family: its catalogue lists Qwen3.8-Flash-Next
+		in several GSQ-RCO, Q2_0 and UD quantizations, and the terminal refuses other
+		GGUF files, including other Qwen3.8 sizes.
 		The engine is built for one GPU backend (CUDA or ROCm HIP) and installed as
 		an engine component that the terminal verifies against a SHA-256 manifest at
 		every start.
