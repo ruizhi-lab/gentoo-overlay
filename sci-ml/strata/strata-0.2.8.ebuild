@@ -127,13 +127,21 @@ src_configure() {
 		rocm_add_sandbox
 	elif use cuda; then
 		mycmakeargs+=( -DSTRATA_ENABLE_CUDA=ON -DSTRATA_ENABLE_HIP=OFF )
-		# nvcc enumerates the build host's cards unless the list is given; the target's is the user's
-		# business, so an unset list keeps upstream's default (sm_86, sm_89 and the sm_120 PTX).
-		if [[ -n ${CMAKE_CUDA_ARCHITECTURES} ]]; then
-			mycmakeargs+=( -DCMAKE_CUDA_ARCHITECTURES="${CMAKE_CUDA_ARCHITECTURES}" )
+		# A binary without code for the user's card stops at startup, so the architecture list is the
+		# user's to choose: CMAKE_CUDA_ARCHITECTURES in /etc/portage/env, or CUDAARCHS in make.conf.
+		# Upstream's own default is a bare "120", which CMake compiles to sm_120 SASS plus compute_120
+		# PTX; that runs on an RTX 50 card but leaves nothing for an older one, so say so once.
+		local cuda_archs=${CMAKE_CUDA_ARCHITECTURES:-${CUDAARCHS}}
+		if [[ -n ${cuda_archs} ]]; then
+			mycmakeargs+=( -DCMAKE_CUDA_ARCHITECTURES="${cuda_archs}" )
 		else
-			einfo "Building for upstream's default CUDA architectures (sm_86, sm_89, sm_120 PTX)."
-			einfo "Set CMAKE_CUDA_ARCHITECTURES in /etc/portage/env/${PN} to target another card."
+			ewarn
+			ewarn "No CMAKE_CUDA_ARCHITECTURES or CUDAARCHS is set: the engine will be built for"
+			ewarn "upstream's default, sm_120 (RTX 50) only. Set it for your card, for example in"
+			ewarn "/etc/portage/env/${PN}:"
+			ewarn
+			ewarn "    CMAKE_CUDA_ARCHITECTURES=\"120-real\""
+			ewarn
 		fi
 		local -x CUDAHOSTCXX="$(cuda_gccdir)"
 		cuda_add_sandbox
@@ -197,8 +205,10 @@ compile_vision() {
 			# ggml-cuda wants NCCL for multi-GPU collectives, which a single-card reader never uses
 			-DGGML_CUDA_NCCL=OFF
 		)
-		[[ -n ${CMAKE_CUDA_ARCHITECTURES} ]] &&
-			archargs+=( -DCMAKE_CUDA_ARCHITECTURES="${CMAKE_CUDA_ARCHITECTURES}" )
+		# the reader is built for the same architectures as the engine: a reader without code for the
+		# card fails where the engine runs
+		local cuda_archs=${CMAKE_CUDA_ARCHITECTURES:-${CUDAARCHS}}
+		[[ -n ${cuda_archs} ]] && archargs+=( -DCMAKE_CUDA_ARCHITECTURES="${cuda_archs}" )
 	fi
 
 	if use cuda; then
