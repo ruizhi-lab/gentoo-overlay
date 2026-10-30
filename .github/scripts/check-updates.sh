@@ -118,17 +118,27 @@ get_latest_stable() {
   local current_ver="${2:-}"
 
   # Fetch releases list, pick first non-prerelease, non-draft
+  # Upstream sometimes publishes an rc as a plain release (kvmem marks
+  # v0.19.0-rc1 as a release), so the version itself is filtered too, the same
+  # way get_latest_tag filters tags.
   local latest
   latest=$(curl "${CURL_ARGS[@]}" "${GH_API}/repos/${repo}/releases?per_page=30" \
     | python3 -c '
-import json,sys
+import json,re,sys
 releases = json.load(sys.stdin)
 if not isinstance(releases, list):
     sys.exit(1)
+prerelease_word = re.compile(
+    r"(?:^|[._+-])(rc|pre|alpha|beta|test|dev|nightly|snapshot|canary|preview"
+    r"|insider|prerelease|unstable|experimental|wip|draft|early|next)"
+    r"\d*$", re.IGNORECASE)
 for r in releases:
-    if not r.get("prerelease") and not r.get("draft"):
-        print(r["tag_name"])
-        break
+    if r.get("prerelease") or r.get("draft"):
+        continue
+    if prerelease_word.search(r.get("tag_name", "").lstrip("v")):
+        continue
+    print(r["tag_name"])
+    break
 ' 2>/dev/null) || return 1
 
   # If no stable release at all, fall back to tags
@@ -268,9 +278,13 @@ if releases:
 
 # Get latest version from Scooter Software Linux install page.
 # Parses download links like bcompare-X.Y.Z.BUILD (full version with build number).
+# The site's WAF answers HTTP 500 to curl's default User-Agent, so the page is
+# requested as a browser does.
 get_scooter_latest() {
   local page
-  page=$(curl "${CURL_ARGS[@]}" "https://www.scootersoftware.com/kb/linux_install") || return 1
+  page=$(curl "${CURL_ARGS[@]}" \
+    -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36" \
+    "https://www.scootersoftware.com/kb/linux_install") || return 1
   printf '%s\n' "$page" | { grep -oP 'bcompare-\K[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' || true; } \
     | sort -Vu | tail -1
 }

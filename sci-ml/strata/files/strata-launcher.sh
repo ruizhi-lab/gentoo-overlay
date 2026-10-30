@@ -1,5 +1,5 @@
 #!/bin/sh
-# Launcher for the Strata terminal installed by sci-misc/strata.
+# Launcher for the Strata terminal installed by sci-ml/strata.
 #
 # The inference engine is a "component package" that Strata verifies (SHA-256 of every
 # file, recorded in engine-component.json) and then starts. This ebuild generates that
