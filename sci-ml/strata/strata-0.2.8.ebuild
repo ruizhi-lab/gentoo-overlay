@@ -96,6 +96,26 @@ pkg_setup() {
 	use terminal && python-single-r1_pkg_setup
 }
 
+# The CUDA architectures the engine is compiled for. A binary without code for the user's card stops
+# at startup, so this is the user's choice: CMAKE_CUDA_ARCHITECTURES in /etc/portage/env/strata, or
+# CUDAARCHS in make.conf (what CUDA's own tooling reads). Both are honoured; the more specific one wins.
+#
+# Without either, upstream's default is a bare "120", which CMake compiles to sm_120 SASS plus
+# compute_120 PTX. The PTX is only ever JIT-compiled for a card NEWER than the one it was made for, so
+# it buys nothing on the card the build is for and costs compile time and binary size; -real asks for
+# the SASS alone. Users who want one binary for several cards list them ("89-real;120-real"), and a
+# trailing bare entry keeps the PTX for cards not yet released.
+cuda_architectures() {
+	local archs="${CMAKE_CUDA_ARCHITECTURES:-${CUDAARCHS}}"
+	if [[ -z ${archs} ]]; then
+		ewarn "No CMAKE_CUDA_ARCHITECTURES or CUDAARCHS is set: building for sm_120 (RTX 50) alone."
+		ewarn "Set it for your card in /etc/portage/env/${PN}, e.g. CMAKE_CUDA_ARCHITECTURES=\"120-real\","
+		ewarn "or list several cards: CMAKE_CUDA_ARCHITECTURES=\"89-real;120-real\"."
+		archs="120-real"
+	fi
+	echo "${archs}"
+}
+
 engine_version() {
 	local ver
 	ver=$(sed -n 's/^project(strata VERSION \([0-9][0-9.]*\).*/\1/p' "${S}/CMakeLists.txt")
@@ -126,23 +146,11 @@ src_configure() {
 		printf '%s\n' "${AMDGPU_TARGETS[@]}" > "${ROCM_TARGET_LST}" || die
 		rocm_add_sandbox
 	elif use cuda; then
-		mycmakeargs+=( -DSTRATA_ENABLE_CUDA=ON -DSTRATA_ENABLE_HIP=OFF )
-		# A binary without code for the user's card stops at startup, so the architecture list is the
-		# user's to choose: CMAKE_CUDA_ARCHITECTURES in /etc/portage/env, or CUDAARCHS in make.conf.
-		# Upstream's own default is a bare "120", which CMake compiles to sm_120 SASS plus compute_120
-		# PTX; that runs on an RTX 50 card but leaves nothing for an older one, so say so once.
-		local cuda_archs=${CMAKE_CUDA_ARCHITECTURES:-${CUDAARCHS}}
-		if [[ -n ${cuda_archs} ]]; then
-			mycmakeargs+=( -DCMAKE_CUDA_ARCHITECTURES="${cuda_archs}" )
-		else
-			ewarn
-			ewarn "No CMAKE_CUDA_ARCHITECTURES or CUDAARCHS is set: the engine will be built for"
-			ewarn "upstream's default, sm_120 (RTX 50) only. Set it for your card, for example in"
-			ewarn "/etc/portage/env/${PN}:"
-			ewarn
-			ewarn "    CMAKE_CUDA_ARCHITECTURES=\"120-real\""
-			ewarn
-		fi
+		mycmakeargs+=(
+			-DSTRATA_ENABLE_CUDA=ON
+			-DSTRATA_ENABLE_HIP=OFF
+			-DCMAKE_CUDA_ARCHITECTURES="$(cuda_architectures)"
+		)
 		local -x CUDAHOSTCXX="$(cuda_gccdir)"
 		cuda_add_sandbox
 		addpredict "/dev/char/"
@@ -205,10 +213,9 @@ compile_vision() {
 			# ggml-cuda wants NCCL for multi-GPU collectives, which a single-card reader never uses
 			-DGGML_CUDA_NCCL=OFF
 		)
-		# the reader is built for the same architectures as the engine: a reader without code for the
-		# card fails where the engine runs
-		local cuda_archs=${CMAKE_CUDA_ARCHITECTURES:-${CUDAARCHS}}
-		[[ -n ${cuda_archs} ]] && archargs+=( -DCMAKE_CUDA_ARCHITECTURES="${cuda_archs}" )
+		# The reader is built for the same architectures as the engine: a reader without code for the
+		# card dies where the engine runs (#3669), and package_engine.py refuses such a package.
+		archargs+=( -DCMAKE_CUDA_ARCHITECTURES="$(cuda_architectures)" )
 	fi
 
 	if use cuda; then
