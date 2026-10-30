@@ -92,6 +92,12 @@ BDEPEND="
 
 PATCHES=( "${FILESDIR}/redact-portage-managed.patch" )
 
+src_prepare() {
+	# cmake_src_prepare applies PATCHES and then eapply_user, which Portage requires of every
+	# src_prepare(). The patch makes `strata install` and `strata update` refuse under Portage.
+	cmake_src_prepare
+}
+
 pkg_setup() {
 	use terminal && python-single-r1_pkg_setup
 }
