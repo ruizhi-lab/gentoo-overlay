@@ -12,7 +12,7 @@ CMAKE_BUILD_TYPE=Release
 # Strata's HIP backend needs the ROCm 7 wave32 compiler stack (gfx1103, gfx115x and gfx120x targets).
 ROCM_VERSION="7.0"
 
-inherit cmake cuda multiprocessing python-single-r1 rocm
+inherit cmake cuda multiprocessing python-single-r1 rocm toolchain-funcs
 
 # Strata takes ggml from a pinned llama.cpp commit (third_party/ggml/VERSION.txt upstream) and builds its
 # own prompt kernels and CPU experts from that exact tree: a llama.cpp release does not carry the same
@@ -31,7 +31,7 @@ LLAMA_S="${WORKDIR}/llama.cpp-${LLAMA_COMMIT}"
 
 LICENSE="MIT"
 SLOT="0"
-KEYWORDS="~amd64"
+KEYWORDS="~amd64 ~arm64"
 IUSE="+cuda hip +terminal +vision"
 REQUIRED_USE="
 	?? ( cuda hip )
@@ -100,20 +100,48 @@ pkg_setup() {
 # at startup, so this is the user's choice: CMAKE_CUDA_ARCHITECTURES in /etc/portage/env/strata, or
 # CUDAARCHS in make.conf (what CUDA's own tooling reads). Both are honoured; the more specific one wins.
 #
-# Without either, upstream's default is a bare "120", which CMake compiles to sm_120 SASS plus
-# compute_120 PTX. The PTX is only ever JIT-compiled for a card NEWER than the one it was made for, so
-# it buys nothing on the card the build is for and costs compile time and binary size; -real asks for
-# the SASS alone. Users who want one binary for several cards list them ("89-real;120-real"), and a
-# trailing bare entry keeps the PTX for cards not yet released.
+# Without either, the engine is built for the NVIDIA cards in the build host, read from the driver.
+# That is the only default that is right on an arbitrary machine: any fixed list would suit one host
+# and produce a binary that stops on the next one. It ties the result to this host, which is what
+# someone building for themselves wants; name the cards to build for another machine.
+#
+# The value is always a concrete list, never CMake's "native", because the same string also describes
+# the package in BUILD.json and a manifest cannot say "native".
 cuda_architectures() {
 	local archs="${CMAKE_CUDA_ARCHITECTURES:-${CUDAARCHS}}"
-	if [[ -z ${archs} ]]; then
-		ewarn "No CMAKE_CUDA_ARCHITECTURES or CUDAARCHS is set: building for sm_120 (RTX 50) alone."
-		ewarn "Set it for your card in /etc/portage/env/${PN}, e.g. CMAKE_CUDA_ARCHITECTURES=\"120-real\","
-		ewarn "or list several cards: CMAKE_CUDA_ARCHITECTURES=\"89-real;120-real\"."
-		archs="120-real"
+
+	if [[ ${archs} == native || -z ${archs} ]]; then
+		local caps
+		caps=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null) \
+			|| die "no CUDA architecture is configured and nvidia-smi did not answer; set \
+CMAKE_CUDA_ARCHITECTURES in /etc/portage/env/${PN}, e.g. \"120-real\""
+
+		# 12.0 -> sm_120; a card whose capability has no matching -real code (an arch newer than the
+		# toolkit knows) keeps the PTX as well, which the driver can compile at load time
+		local cap
+		archs=""
+		for cap in ${caps}; do
+			archs+="${archs:+;}${cap/./}-real"
+		done
+		[[ -n ${archs} ]] || die "nvidia-smi reported no compute capability"
+
+		ewarn "No CMAKE_CUDA_ARCHITECTURES or CUDAARCHS is set: building for the cards in this"
+		ewarn "machine (${archs}). To build for another machine, name its cards in"
+		ewarn "/etc/portage/env/${PN}, e.g. CMAKE_CUDA_ARCHITECTURES=\"86-real\" or"
+		ewarn "\"89-real;120-real\"."
 	fi
+
 	echo "${archs}"
+}
+
+# The component's platform key, as strata_control.targets.host_platform() spells it: the terminal
+# only starts a package whose platform matches this machine.
+engine_platform() {
+	case $(tc-arch) in
+		amd64)  echo "linux-x86_64" ;;
+		arm64)  echo "linux-aarch64" ;;
+		*)      die "${CATEGORY}/${PN} has no engine platform for $(tc-arch)" ;;
+	esac
 }
 
 engine_version() {
@@ -343,7 +371,7 @@ package_engine() {
 		--src "${stage}" \
 		--backend "${backend}" \
 		--version "$(engine_version)" \
-		--platform linux-x86_64 \
+		--platform "$(engine_platform)" \
 		--out "${ED}/usr/lib/${PN}/components/engine" \
 		--build-id "gentoo-${PF}" \
 		"${archargs[@]}" "${allow[@]}" || die

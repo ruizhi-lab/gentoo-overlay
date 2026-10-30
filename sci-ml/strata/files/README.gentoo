@@ -14,11 +14,14 @@ The engine is built for exactly one GPU backend:
 The two are mutually exclusive. Without either flag the package does not build:
 a CPU-only engine is not something upstream ships.
 
-CUDA users have to say which cards the engine is for. The toolkit builds for
-upstream's default (sm_86, sm_89 and the sm_120 PTX of RTX 50) unless told
-otherwise, and a binary that has no code for your card stops at startup with a
-message instead of running slowly. Set the list in /etc/portage/env/strata and
-pull it in with /etc/portage/package.env:
+The engine is compiled for specific NVIDIA compute capabilities, and a binary
+without code for your card stops at startup with a message instead of running
+slowly. With nothing configured, the build asks the driver which cards this
+machine has and builds exact code for them, so a local build needs no setup.
+
+Set the list yourself to build for another machine, or to build one engine for
+several cards, in /etc/portage/env/strata and pull it in with
+/etc/portage/package.env:
 
     # /etc/portage/env/strata
     CMAKE_CUDA_ARCHITECTURES="89-real;120-real"
@@ -26,10 +29,18 @@ pull it in with /etc/portage/package.env:
     # /etc/portage/package.env
     sci-ml/strata strata
 
-ROCm users select the cards with the amdgpu_targets_* flags; Strata's HIP path
-only accepts the wave32 architectures it knows (gfx10.. and gfx11.., gfx12..).
-`emerge --info` and the eclass list which of those the installed ROCm supports.
-AMD cards need CONFIG_HSA_AMD in the kernel.
+CUDAARCHS in make.conf is honoured too and serves as the default for the whole
+system. The "-real" suffix asks for the card's own machine code; drop it on the
+last entry ("89-real;120") to also carry PTX, which the driver can compile for
+a card newer than the toolkit knows.
+
+ROCm users select the cards with the amdgpu_targets_* flags. Strata's HIP path
+carries a fixed list of wave32 architectures and refuses any other with a
+configure error, so the ebuild passes the amdgpu_targets_* selection and never
+lets the build probe the host's cards. Validated by upstream on gfx1100 and
+gfx1201, reported working on gfx1101 and gfx1200, and building-but-unvalidated
+on the rest of the RDNA2/RDNA3/RDNA3.5 list; a target outside that list fails
+at configure time. AMD cards need CONFIG_HSA_AMD in the kernel.
 
 The engine is installed as a component under /usr/lib/strata/components, in the
 layout upstream's own packaging produces, with a SHA-256 manifest that the
