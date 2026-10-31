@@ -6,6 +6,6 @@
 		<name>Ruizhi Zhong</name>
 	</maintainer>
 	<upstream>
-		<remote-id type="github">kvmem/kvmem-llama.cpp</remote-id>
+		<remote-id type="github">kvmem/kvmem</remote-id>
 	</upstream>
 </pkgmetadata>

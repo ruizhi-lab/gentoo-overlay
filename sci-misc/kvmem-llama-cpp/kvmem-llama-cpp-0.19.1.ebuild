@@ -5,8 +5,18 @@ EAPI=8
 
 inherit cmake cuda toolchain-funcs
 
-# llama.cpp commit pinned by upstream in backends/versions.json.
-LLAMA_COMMIT="7fe450e19305b828c199d602c23a8337aaa1f03b"
+# llama.cpp commit pinned by upstream in backends/versions.json, with the ordered
+# patch series that file also records (backends/patches/llamacpp-*.patch).
+LLAMA_COMMIT="620d2225cc436ab0b001e3200e590e3b286ef9ab"
+# The series has to be applied in this order: each patch declares the ones it
+# requires, and upstream's prepare-backends.py rejects a different sequence.
+LLAMA_PATCHES=(
+	llamacpp-kvmem
+	llamacpp-pq2
+	llamacpp-ptq1
+	llamacpp-ptq1-performance
+	llamacpp-checkpoint-policy
+)
 
 DESCRIPTION="CUDA llama.cpp runtime with tiered KV memory for long contexts"
 HOMEPAGE="https://github.com/kvmem/kvmem"
@@ -32,7 +42,10 @@ DEPEND="${RDEPEND}"
 RDEPEND+=" x11-drivers/nvidia-drivers"
 BDEPEND=">=dev-util/nvidia-cuda-toolkit-13.2.2"
 
-PATCHES=( "${FILESDIR}/${P}-cxxflags.patch" )
+PATCHES=(
+	"${FILESDIR}/${P}-cxxflags.patch"
+	"${FILESDIR}/${P}-nvml-deprecated.patch"
+)
 
 pkg_pretend() {
 	use openmp && tc-check-openmp
@@ -43,12 +56,19 @@ pkg_setup() {
 }
 
 src_prepare() {
-	# The llama.cpp backend lives in backends/llamacpp, where upstream applies
-	# its KVMem integration patch to the pinned commit.
+	# The llama.cpp backend lives in backends/llamacpp, an empty submodule
+	# directory in the release tarball. Upstream's scripts/prepare-backends.py
+	# needs the git metadata of that submodule to verify its patch series, which
+	# a tarball build does not have, so the pinned tree is unpacked here and the
+	# same series, in the same order, is applied with eapply.
 	rmdir backends/llamacpp || die
 	mv "${WORKDIR}/llama.cpp-${LLAMA_COMMIT}" backends/llamacpp || die
+
 	pushd backends/llamacpp >/dev/null || die
-	eapply "${S}/backends/patches/llamacpp-kvmem.patch"
+	local patch
+	for patch in "${LLAMA_PATCHES[@]}"; do
+		eapply "${S}/backends/patches/${patch}.patch"
+	done
 	popd >/dev/null || die
 
 	cuda_src_prepare
@@ -59,7 +79,6 @@ src_configure() {
 	local mycmakeargs=(
 		-DBUILD_SHARED_LIBS=OFF
 		-DKVMEM_BUILD_LLAMA=ON
-		-DKVMEM_ENABLE_NVME=ON
 		-DGGML_CUDA=ON
 		-DGGML_NATIVE=OFF
 		-DGGML_AVX=$(usex cpu_flags_x86_avx)
@@ -72,9 +91,12 @@ src_configure() {
 		-DGGML_OPENMP=$(usex openmp)
 		-DGGML_VULKAN=OFF
 		-DLLAMA_OPENSSL=OFF
-		# The server needs the mtmd target defined by llama.cpp/tools.
+		# The server links mtmd, which llama.cpp defines under tools/.
 		-DLLAMA_BUILD_TOOLS=ON
 	)
+	# llama.cpp's own server target stays off: upstream forces it off in its
+	# directory, and the two tools installed below are the only entry points
+	# this package offers.
 	if [[ -n ${CMAKE_CUDA_ARCHITECTURES} ]]; then
 		mycmakeargs+=( -DCMAKE_CUDA_ARCHITECTURES="${CMAKE_CUDA_ARCHITECTURES}" )
 	fi
@@ -91,9 +113,12 @@ src_compile() {
 
 src_test() {
 	# Model-free host-memory tests; GPU/MTP tests need separately supplied GGUFs.
+	# The NVMe store has been retired upstream (docs/legacy-ssd-retirement), so
+	# its test target is gone; the shared RAM/SSD tiers are covered by
+	# host_kv_storage_test and tiered_kv_storage_test.
 	local targets=(
-		kvmem_store_test pinned_kv_tier_test
-		nvme_kv_tier_test kvmem_runtime_test raw_kv_store_test
+		kvmem_store_test pinned_kv_tier_test host_kv_storage_test
+		tiered_kv_storage_test kvmem_runtime_test raw_kv_store_test
 	)
 	cmake_src_compile "${targets[@]}"
 	local pattern

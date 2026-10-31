@@ -1,0 +1,44 @@
+From: Ruizhi Zhong <ruizhi.zhong88@gmail.com>
+Date: Sat, 31 Oct 2026 20:45:00 +0800
+Subject: [PATCH] kvmem: stop NVML's DEPRECATED macro clobbering llama.cpp's
+
+monitor_hardware.hpp includes <nvml.h> whenever it is available. NVML
+declares DEPRECATED(ver) as a one-argument macro, while llama.cpp's llama.h
+declares DEPRECATED(func, hint) with two arguments and both are plain macros,
+so whichever lands second breaks the other. A translation unit that takes the
+KVMem monitor header and later the llama.cpp API -- tools/kvmem-vision.h
+includes mtmd.h, which wraps three declarations in DEPRECATED(func, hint) --
+fails to compile:
+
+    mtmd.h:270:61: error: macro "DEPRECATED" passed 2 arguments, but takes just 1
+
+llama.h is included first in these translation units, so its definition is
+already gone by the time NVML overwrites the name and cannot come back: the
+include guard keeps it from being redefined. The definition is therefore
+restored here, spelled the same way llama.h spells it for the same compilers,
+and NVML's own uses are all expanded before this point.
+
+Upstream-Status: Not submitted (reported while packaging 0.19.1)
+--- a/kvmem/include/kvmem/monitor_hardware.hpp
++++ b/kvmem/include/kvmem/monitor_hardware.hpp
+@@ -13,6 +13,20 @@
+ #endif
+ #if __has_include(<nvml.h>)
+ #include <nvml.h>
++// NVML declares DEPRECATED(ver) with one argument and llama.cpp's llama.h
++// declares DEPRECATED(func, hint) with two. Both are plain macros, so the
++// header that comes second breaks the other one, and llama.h cannot repair
++// itself afterwards because its include guard is already set. Restore the
++// llama.cpp spelling for the compilers llama.h has a branch for; NVML has
++// finished with the name at this point.
++#undef DEPRECATED
++#ifdef __GNUC__
++#    define DEPRECATED(func, hint) func __attribute__((deprecated(hint)))
++#elif defined(_MSC_VER)
++#    define DEPRECATED(func, hint) __declspec(deprecated(hint)) func
++#else
++#    define DEPRECATED(func, hint) func
++#endif
+ #define KVMEM_MONITOR_NVML 1
+ #endif
+ 

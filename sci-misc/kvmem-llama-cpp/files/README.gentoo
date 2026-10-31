@@ -1,7 +1,10 @@
-This package builds the CUDA runtime, without model weights or the npm web UI.
-Use an OpenAI-compatible client with llama-kvmem-server.
+This package builds the llama.cpp backend of the CUDA runtime, without model
+weights or the npm web UI. Use an OpenAI-compatible client with
+llama-kvmem-server.
 The patched llama/ggml libraries are statically linked into the two tools, so
 this package can coexist with sci-misc/llama-cpp and prism-llama-cpp.
+
+Upstream also ships NInfer and PolyStrata backends; they are not built here.
 
 For RTX 5080, select the architecture in /etc/portage/env/kvmem-llama-cpp:
     CMAKE_CUDA_ARCHITECTURES="120a-real"
@@ -12,13 +15,21 @@ Download Qwen3.8-27B-GSQ-RCO-IQ3_S-mtp.gguf separately from:
 https://huggingface.co/ISTA-DASLab/Qwen3.8-27B-GSQ-RCO-GGUF
 
 The upstream 16 GiB IQ3 recipe uses a bounded GPU KV working set with a
-256K logical context. Historical KV is stored in system RAM. Start with:
+256K logical context. Historical KV is stored in system RAM, and optionally on
+SSD through the shared RAM/SSD tiers that replaced the retired NVMe store.
+Start with:
     llama-kvmem-server -m /path/to/Qwen3.8-27B-GSQ-RCO-IQ3_S-mtp.gguf \
         --host 127.0.0.1 --port 18200 -c 262144 --gpu-layers all \
-        --kvmem-budget 36864 --kvmem-gen-reserve 16384 \
+        --kvmem --kvmem-budget 36864 --kvmem-gen-reserve 1024 \
+        --kvmem-host-mib 16384 \
         -ctk q8_0 -ctv q8_0 --spec-type draft-mtp --no-ui
 
-Check the upstream README for current sampling and memory settings. A single
-generation, including reasoning, must fit --kvmem-gen-reserve. Model inference
-correctness must be checked after changing the CUDA compiler; a successful
-build alone does not validate IQ3 output.
+--kvmem-gen-reserve is reusable generation workspace, not a cap on how much
+output a request may produce; context and request limits still apply. The
+host-memory quota is shared by every conversation, so it has to hold all the
+concurrent working sets. Add --kvmem-disk-mib N and --kvmem-disk-path DIR to
+put inactive history on SSD; the two are only accepted together.
+
+Check the upstream README for current sampling and memory settings. Model
+inference correctness must be checked after changing the CUDA compiler; a
+successful build alone does not validate IQ3 output.
