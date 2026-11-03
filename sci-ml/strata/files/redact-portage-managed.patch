@@ -2,21 +2,26 @@ From: Ruizhi Zhong <ruizhi.zhong88@gmail.com>
 Date: Tue, 03 Nov 2026 20:00:00 +0800
 Subject: [PATCH] honour STRATA_PACKAGE_MANAGED=1 in install and update
 
-Strata ships two ways of acquiring things: `strata install` hands over to the
-installer of a full source folder (pip, the engine, the models), and `strata
-update` / `strata components update|rollback|install-file|use|remove` write into
-the component folder. Under Portage both are wrong: the engine is merged as a
-component package by this ebuild, and a self-update would overwrite files that
-the package database owns.
+Strata acquires things in two ways: `strata install` hands over to the installer
+of a full source folder (pip, the engine, the models), and `strata update` /
+`strata components update|rollback|install-file|use|remove` download or move
+engines inside the component folder. Under Portage both are wrong: this ebuild
+merges the engine as a component package, so a self-update would write files the
+package database does not know about and leave the installed component
+mismatched with what Portage recorded.
 
 The launcher installed by the ebuild exports STRATA_PACKAGE_MANAGED=1. When it
-is set, both commands refuse with exit code 5 and name Portage instead, while
-`rollback`, `install-file`, `use` and `remove` still work when they are pointed
-at a folder the calling user owns (--components-dir / STRATA_COMPONENTS_DIR),
-which keeps per-user engine experiments possible without touching /usr. The
-read-only listings (`engines`, `--check`) are not affected.
+is set, the commands that write are refused with exit code 5 and name Portage
+instead, while `rollback`, `install-file`, `use` and `remove` still work when
+they are pointed at a folder the calling user owns (--components-dir /
+STRATA_COMPONENTS_DIR), which keeps per-user engine experiments possible without
+touching /usr. Read-only operations are left alone: `update --check` still reads
+the feed and reports the version emerge would install, `components engines`
+still lists what is installed.
 
-A user who wants the upstream behaviour back can export
+This is a guard on the normal entry point, not a sandbox: the variable is set by
+the launcher, so running strata.py from another wrapper does not inherit it. A
+user who wants the upstream behaviour back can export
 STRATA_PACKAGE_MANAGED=0.
 
 Upstream status: not submitted; Gentoo packaging only.
@@ -37,7 +42,7 @@ index d7bebb4..bc22592 100644
      if not installer.is_file():
          return _error("this folder has no installer (setup.py). Engines, models and updates are installed from a "
 diff --git a/strata_cli/update_cmd.py b/strata_cli/update_cmd.py
-index 6d3cd53..aca5e6e 100644
+index 6d3cd53..66447d4 100644
 --- a/strata_cli/update_cmd.py
 +++ b/strata_cli/update_cmd.py
 @@ -230,6 +230,14 @@ def _print_check(report: dict) -> None:
@@ -55,13 +60,14 @@ index 6d3cd53..aca5e6e 100644
  def run(a) -> int:
      from strata_control import acquisition, engine_component as ec, feed as feedmod, signing, updater
      machine = a.output in ("json", "jsonl")
-@@ -241,6 +249,19 @@ def run(a) -> int:
+@@ -241,6 +249,20 @@ def run(a) -> int:
              print(f"strata: {message}", file=sys.stderr)
          return code
  
 +    if os.environ.get("STRATA_PACKAGE_MANAGED") == "1":
 +        sub = getattr(a, "components_command", None)
-+        if a.command == "update" or sub == "update":
++        # `--check` only reads the feed: it names the version emerge would install and changes nothing
++        if (a.command == "update" or sub == "update") and not getattr(a, "check", False):
 +            return fail("this Strata is installed and managed by Portage (sci-ml/strata); update the engine "
 +                        "with emerge, not `strata update`. Set STRATA_PACKAGE_MANAGED=0 to use the self-update "
 +                        "feed anyway.", 5)

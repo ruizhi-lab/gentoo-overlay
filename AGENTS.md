@@ -217,10 +217,24 @@ explicitly requires otherwise.
   docs. Drop the API server's `test_*.py` modules. Re-check that list when
   bumping: a missing module fails at run time, not at build time.
 - Keep `files/redact-portage-managed.patch`, which makes `strata install` and
-  `strata update` refuse under Portage and name emerge instead. Re-derive the
-  hunks against each new tarball with `patch --dry-run --fuzz=0`; upstream
-  rewrites these functions often, and the reference ebuilds in the wild carry
-  stale versions.
+  `strata update` refuse under Portage and name emerge instead. It is not
+  required to build, but it is required by the packaging policy that Portage
+  owns `/usr/lib/strata/components`: a root-run `strata update`, `rollback`,
+  `install-file`, `use` or `remove` would otherwise write or delete files
+  there that the package database does not know about, leaving the installed
+  component inconsistent with what this ebuild merged. Upstream's
+  `STRATA_NO_ACQUIRE` is not a substitute: it only guards downloads and install
+  steps, does not cover the `use`/`remove` writers, and does not name emerge.
+- The guard is gated on `STRATA_PACKAGE_MANAGED=1`, which only the installed
+  launcher exports, so it protects the normal entry point and not a sandbox. It
+  must cover every command that writes the component folder, while read-only
+  operations stay allowed (`update --check`, `components engines`). When a
+  release adds a command that writes there, add it to the patch; when upstream
+  grows an official package-managed switch, drop the patch instead.
+- Re-derive the hunks against each new tarball with `patch --dry-run --fuzz=0`;
+  upstream rewrites these functions often, and the reference ebuilds in the
+  wild carry stale versions. The header must keep the upstream status, and the
+  prose must describe the policy rather than the incident that prompted it.
 - The launcher must keep the component folder at `/usr/lib/strata/components`
   and point the install and data folders at the caller's XDG data directory.
   Strata otherwise derives them from the component folder, which is root-owned
