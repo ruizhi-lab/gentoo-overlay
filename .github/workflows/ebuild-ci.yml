@@ -30,7 +30,7 @@ jobs:
       options: --tmpfs /run --tmpfs /tmp
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           path: repo
           fetch-depth: 0

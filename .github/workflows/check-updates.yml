@@ -14,7 +14,7 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check for updates
         id: check
@@ -45,7 +45,7 @@ jobs:
 
       - name: Create issue if updates found
         if: steps.check.outputs.update_count != '0'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           # Pass the multiline output through the environment to avoid embedding
           # upstream tag text directly into JavaScript source.
