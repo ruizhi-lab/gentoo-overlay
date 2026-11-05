@@ -26,11 +26,9 @@ STRATA_PACKAGE_MANAGED=0.
 
 Upstream status: not submitted; Gentoo packaging only.
 ---
-diff --git a/strata_cli/cli.py b/strata_cli/cli.py
-index d7bebb4..bc22592 100644
 --- a/strata_cli/cli.py
 +++ b/strata_cli/cli.py
-@@ -2066,6 +2066,10 @@ def _install(a: argparse.Namespace) -> int:
+@@ -2074,6 +2074,10 @@
      """The one place the terminal acquires anything: it hands over to the installer (setup.py) of a full Strata
      folder, which is where pip, the engine and the models are fetched. A folder without it (the terminal archive)
      says so and names what to do instead."""
@@ -41,12 +39,10 @@ index d7bebb4..bc22592 100644
      installer = Path(os.environ.get("STRATA_INSTALL_DIR") or ROOT) / "setup.py"
      if not installer.is_file():
          return _error("this folder has no installer (setup.py). Engines, models and updates are installed from a "
-diff --git a/strata_cli/update_cmd.py b/strata_cli/update_cmd.py
-index 6d3cd53..66447d4 100644
 --- a/strata_cli/update_cmd.py
 +++ b/strata_cli/update_cmd.py
-@@ -230,6 +230,14 @@ def _print_check(report: dict) -> None:
-         print("  To update: strata update")
+@@ -270,6 +270,14 @@
+     return chosen if found else own
  
  
 +def _component_dir_user_owned(path: Path) -> bool:
@@ -60,7 +56,7 @@ index 6d3cd53..66447d4 100644
  def run(a) -> int:
      from strata_control import acquisition, engine_component as ec, feed as feedmod, signing, updater
      machine = a.output in ("json", "jsonl")
-@@ -241,6 +249,20 @@ def run(a) -> int:
+@@ -281,6 +289,20 @@
              print(f"strata: {message}", file=sys.stderr)
          return code
  
@@ -78,6 +74,6 @@ index 6d3cd53..66447d4 100644
 +                            "component folder is read-only. To switch to, delete, roll back to or install an "
 +                            "engine file, pass --components-dir pointing at a folder you own (and set "
 +                            "STRATA_COMPONENTS_DIR to it), or set STRATA_PACKAGE_MANAGED=0.", 5)
-     root = Path(a.components_dir) if a.components_dir else ec.components_dir()
+     root = Path(a.components_dir) if a.components_dir else default_components_dir(ec)
      try:
          hardware = updater.detect_hardware()
