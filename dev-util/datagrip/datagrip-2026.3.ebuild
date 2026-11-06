@@ -72,8 +72,10 @@ src_install() {
 	fperms 755 "${dir}"/jbr/bin/{java,javac,javadoc,jcmd,jdb,jfr,jhsdb,jinfo,jmap,jps,jrunscript,jstack,jstat,keytool,rmiregistry,serialver}
 	fperms 755 "${dir}"/jbr/lib/{jexec,jspawnhelper}
 	fperms 755 "${dir}"/jbr/bin/jwebserver
-	fperms 755 "${dir}"/plugins/platform-ijent-bundledBinaries/ijent-x86_64-unknown-linux-musl-release
 	fperms 755 "${dir}"/plugins/remote-dev-server/bin/launcher.sh
+	# JetBrains moved this binary from plugins/platform-ijent-bundledBinaries/
+	# to lib/ijent/ in 2026.3; the aarch64 copy is removed in src_prepare().
+	fperms 755 "${dir}"/lib/ijent/ijent-x86_64-unknown-linux-musl-release
 	fperms 755 "${dir}"/plugins/remote-dev-server/selfcontained/bin/{Xvfb,xkbcomp}
 
 	make_wrapper "${PN}" "${dir}"/bin/"${PN}"
