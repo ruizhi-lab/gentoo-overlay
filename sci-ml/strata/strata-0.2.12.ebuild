@@ -441,6 +441,12 @@ install_terminal() {
 		data/draft_vocab_en.bin data/draft_vocab_fr.bin data/expert-profile.bin \
 		data/expert-profile-coder.bin
 
+	# drafting_fetch.provide_licence() copies this Apache-2.0 text and the "modified by Strata"
+	# notice beside the tuned drafter it fetches, resolving it from the install root. Upstream's
+	# package_terminal.py PAYLOAD omits it, so it is added here: the tuned drafter is Apache-2.0
+	# and is redistributed with that attribution.
+	doins -r data/dflash2-tuned
+
 	insinto "${root}/bench/prompts"
 	doins -r bench/prompts/standard-v1
 
