@@ -28,7 +28,7 @@ Upstream status: not submitted; Gentoo packaging only.
 ---
 --- a/strata_cli/cli.py
 +++ b/strata_cli/cli.py
-@@ -2074,6 +2074,10 @@
+@@ -2075,6 +2075,10 @@
      """The one place the terminal acquires anything: it hands over to the installer (setup.py) of a full Strata
      folder, which is where pip, the engine and the models are fetched. A folder without it (the terminal archive)
      says so and names what to do instead."""
@@ -41,7 +41,7 @@ Upstream status: not submitted; Gentoo packaging only.
          return _error("this folder has no installer (setup.py). Engines, models and updates are installed from a "
 --- a/strata_cli/update_cmd.py
 +++ b/strata_cli/update_cmd.py
-@@ -270,6 +270,14 @@
+@@ -275,6 +275,14 @@
      return chosen if found else own
  
  
@@ -56,7 +56,7 @@ Upstream status: not submitted; Gentoo packaging only.
  def run(a) -> int:
      from strata_control import acquisition, engine_component as ec, feed as feedmod, signing, updater
      machine = a.output in ("json", "jsonl")
-@@ -281,6 +289,20 @@
+@@ -286,6 +294,20 @@
              print(f"strata: {message}", file=sys.stderr)
          return code
  
