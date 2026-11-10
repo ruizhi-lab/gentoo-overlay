@@ -197,6 +197,10 @@ src_configure() {
 			-DCMAKE_CUDA_ARCHITECTURES="$(cuda_architectures)"
 		)
 		local -x CUDAHOSTCXX="$(cuda_gccdir)"
+		# nvcc's host compiler is the newest GCC that CUDA supports, which can be older than the
+		# default. Build every C and C++ object with it: otherwise the link mixes its libstdc++
+		# with the default GCC's headers and fails on symbols only the newer library has.
+		local -x CC="${CUDAHOSTCXX}/gcc" CXX="${CUDAHOSTCXX}/g++"
 		cuda_add_sandbox
 		addpredict "/dev/char/"
 	fi
@@ -243,6 +247,8 @@ build_vision_project() {
 	local -x CMAKE_BUILD_TYPE=Release
 	if use cuda; then
 		local -x CUDAHOSTCXX="$(cuda_gccdir)"
+		# the same GCC as the engine (see src_configure)
+		local -x CC="${CUDAHOSTCXX}/gcc" CXX="${CUDAHOSTCXX}/g++"
 	fi
 
 	# -DSTRATA_PORTABLE=ON keeps the reader on an AVX2 baseline, like the engine, instead of the build
