@@ -97,7 +97,7 @@ src_install() {
 	newins "${DISTDIR}/gentoo-logo.png" logo.png
 	newins "${DISTDIR}/gentoo-logo.png" apple-touch-icon.png
 	newins "${DISTDIR}/gentoo-logo.png" favicon.ico
-	rm -rf "${ED}"/usr/share/cockpit/branding/{arch,centos,debian,fedora,opensuse,rhel,scientific,ubuntu} || die
+	rm -rf "${ED}"/usr/share/cockpit/branding/{arch,centos,debian,fedora,fedora-43,fedora-44,fedora-45,opensuse,rhel,scientific,ubuntu} || die
 
 	newpamd "${FILESDIR}/cockpit.pam" cockpit
 	dodoc README.md AUTHORS

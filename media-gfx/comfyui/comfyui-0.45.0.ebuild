@@ -20,10 +20,10 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE} ?? ( cuda rocm )"
 RDEPEND="
 	${PYTHON_DEPS}
 	~dev-python/comfyui-embedded-docs-0.5.16[${PYTHON_SINGLE_USEDEP}]
-	~dev-python/comfyui-frontend-package-1.57.6[${PYTHON_SINGLE_USEDEP}]
-	~dev-python/comfyui-workflow-templates-0.11.101[${PYTHON_SINGLE_USEDEP}]
+	~dev-python/comfyui-frontend-package-1.58.5[${PYTHON_SINGLE_USEDEP}]
+	~dev-python/comfyui-workflow-templates-0.11.105[${PYTHON_SINGLE_USEDEP}]
 	~dev-python/comfy-aimdo-0.6.0[${PYTHON_SINGLE_USEDEP}]
-	~dev-python/comfy-kitchen-0.2.40[cuda?,rocm?,${PYTHON_SINGLE_USEDEP}]
+	~dev-python/comfy-kitchen-0.2.41[cuda?,rocm?,${PYTHON_SINGLE_USEDEP}]
 	$(python_gen_cond_dep '
 		>=sci-ml/tokenizers-0.13.3[${PYTHON_USEDEP}]
 	')
