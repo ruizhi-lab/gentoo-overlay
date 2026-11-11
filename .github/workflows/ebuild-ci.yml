@@ -30,11 +30,6 @@ jobs:
       options: --tmpfs /run --tmpfs /tmp
 
     steps:
-      - uses: actions/checkout@v7
-        with:
-          path: repo
-          fetch-depth: 0
-
       - name: Setup profile (${{ matrix.init }})
         run: |
           echo "Current profile:"
@@ -60,6 +55,14 @@ jobs:
           for tool in unzip tar gzip xz ar git; do
             command -v $tool >/dev/null 2>&1 && echo "$tool: OK" || echo "$tool: MISSING"
           done
+
+      # Checked out only after git is installed. Without git, actions/checkout
+      # falls back to a tarball with no .git directory, so the changed-ebuild
+      # detection below cannot run.
+      - uses: actions/checkout@v7
+        with:
+          path: repo
+          fetch-depth: 0
 
       - name: Register overlay
         run: |
@@ -93,11 +96,16 @@ jobs:
       - name: Find changed ebuilds
         id: changed
         run: |
-          cd "${GITHUB_WORKSPACE}/repo"
+          cd "${GITHUB_WORKSPACE}/repo" || { echo "::error::repository checkout is missing"; exit 1; }
+
+          # An empty list skips the verify step, so a failing git command must
+          # stop the job here instead of producing an empty result.
+          command -v git >/dev/null 2>&1 || { echo "::error::git is required for changed-ebuild detection"; exit 1; }
+          git rev-parse --git-dir >/dev/null 2>&1 || { echo "::error::the checkout is not a git repository"; exit 1; }
 
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            git fetch origin "${{ github.base_ref }}" --depth=1
-            RANGE="FETCH_HEAD...HEAD"
+            git fetch origin "${{ github.base_ref }}" --depth=1 || { echo "::error::cannot fetch the base branch"; exit 1; }
+            BASE="FETCH_HEAD"
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             # Manual trigger: test prebuilt/binary ebuilds only.
             # Source ebuilds need build deps (go, cmake, qt) not in stage3.
@@ -118,15 +126,22 @@ jobs:
             echo "Testing binary ebuilds only: ${EBUILDS}"
             exit 0
           else
-            RANGE="HEAD~1...HEAD"
+            # Compare with the previous tip of the branch, so every commit of
+            # the push is checked. A new branch has an all-zero "before".
+            BASE="${{ github.event.before }}"
+            if [ -z "${BASE}" ] || [ "${BASE}" = "0000000000000000000000000000000000000000" ]; then
+              BASE="HEAD~1"
+            fi
           fi
 
-          EBUILDS=$(git diff --name-only ${RANGE} -- '*.ebuild' 2>/dev/null || true)
+          git cat-file -e "${BASE}^{commit}" 2>/dev/null || { echo "::error::base commit ${BASE} is not in the checkout"; exit 1; }
+          CHANGED=$(git diff --name-only --diff-filter=ACMR "${BASE}...HEAD") || { echo "::error::git diff ${BASE}...HEAD failed"; exit 1; }
+
+          EBUILDS=$(printf '%s\n' "${CHANGED}" | grep '\.ebuild$' || true)
 
           # If no ebuilds directly changed, find ebuilds in changed dirs
           if [ -z "${EBUILDS}" ]; then
-            DIRS=$(git diff --name-only ${RANGE} 2>/dev/null \
-              | xargs -n1 dirname 2>/dev/null | sort -u || true)
+            DIRS=$(printf '%s\n' "${CHANGED}" | sed -n 's#/[^/]*$##p' | sort -u)
             for d in ${DIRS}; do
               for e in "${d}/"*.ebuild; do
                 [ -f "${e}" ] && EBUILDS="${EBUILDS} ${e}"
@@ -134,11 +149,14 @@ jobs:
             done
           fi
 
-          EBUILDS=$(echo "${EBUILDS}" | xargs -n1 2>/dev/null | sort -u)
-          echo "ebuilds<<EOF" >> $GITHUB_OUTPUT
-          echo "${EBUILDS}" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-          echo "Found ebuilds: ${EBUILDS}"
+          EBUILDS=$(printf '%s\n' ${EBUILDS} | sed '/^$/d' | sort -u)
+          {
+            echo "ebuilds<<EOF"
+            if [ -n "${EBUILDS}" ]; then printf '%s\n' "${EBUILDS}"; fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          echo "Changed ebuilds (${BASE}...HEAD):"
+          if [ -n "${EBUILDS}" ]; then printf '  %s\n' ${EBUILDS}; else echo "  (none)"; fi
 
       - name: Smoke test (pkgcheck scan)
         run: |
