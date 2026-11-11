@@ -64,6 +64,59 @@ python_configure_all() {
 	fi
 }
 
+# Sets COMFY_CUDA_ARCHS for setup.py, which passes it to CMake. A value that is
+# already in the environment, for example from /etc/portage/env, is kept.
+# Otherwise the architectures are read from the GPUs of the build machine with
+# nvidia-smi. No card is written into this ebuild, because a CUDA binary holds
+# code only for the architectures it was built for.
+cuda_select_architectures() {
+	if [[ -n ${COMFY_CUDA_ARCHS} ]]; then
+		return
+	fi
+
+	local caps cap archs=() major minor
+	caps=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null) \
+		|| die "COMFY_CUDA_ARCHS is not set and nvidia-smi did not answer; set COMFY_CUDA_ARCHS in /etc/portage/env/${PN}"
+
+	for cap in $(printf '%s\n' ${caps} | sort -u); do
+		[[ ${cap} =~ ^[0-9]+\.[0-9]+$ ]] \
+			|| die "nvidia-smi reported an unexpected compute capability: ${cap}"
+		major=${cap%%.*}
+		minor=${cap#*.}
+		# Hopper uses the a-specific code, Blackwell and later the family code,
+		# as upstream's default list does; other GPUs use plain real code.
+		case ${major} in
+			9) archs+=( "90a-real" ) ;;
+			1[0-9]) archs+=( "${major}${minor}f" ) ;;
+			*) archs+=( "${major}${minor}-real" ) ;;
+		esac
+	done
+	[[ ${#archs[@]} -gt 0 ]] || die "nvidia-smi reported no compute capability"
+
+	local IFS=';'
+	export COMFY_CUDA_ARCHS="${archs[*]}"
+}
+
+pkg_setup() {
+	# Defining pkg_setup replaces python-single-r1_pkg_setup, which sets EPYTHON.
+	python-single-r1_pkg_setup
+
+	if ! use cuda; then
+		return 0
+	fi
+
+	cuda_select_architectures
+	einfo "CUDA architectures: ${COMFY_CUDA_ARCHS}"
+	ewarn "The CUDA build runs only on these architectures. Rebuild comfy-kitchen after"
+	ewarn "changing the GPUs, or set COMFY_CUDA_ARCHS in /etc/portage/env/${PN} to build"
+	ewarn "for other cards, for example COMFY_CUDA_ARCHS=\"120f\" for RTX 50 series."
+	ewarn "Without COMFY_CUDA_ARCHS, the architectures come from the GPUs in this machine."
+	ewarn "nvcc accepts host GCC only up to the GCC_MAX_VER of the CUDA toolkit: 14 for"
+	ewarn "CUDA 12.9.2 and 16 for CUDA 13.4.1. If the current GCC is newer, build with an"
+	ewarn "older GCC."
+	return 0
+}
+
 python_compile() {
 	if use cuda; then
 		export COMFY_KITCHEN_BUILD_NO_HIP=1
@@ -71,8 +124,16 @@ python_compile() {
 		# /usr/local/cuda. The toolkit this ebuild depends on is installed
 		# under /opt/cuda, which is in PATH only when the system adds it.
 		export CUDA_HOME="${CUDA_HOME:-${EPREFIX}/opt/cuda}"
+		cuda_select_architectures
 	elif use rocm; then
 		export COMFY_KITCHEN_BUILD_HIP=1
 	fi
 	distutils-r1_python_compile
+}
+
+pkg_postinst() {
+	if use cuda; then
+		elog "The CUDA binary of comfy-kitchen runs only on the GPU architectures it was"
+		elog "built for. Rebuild it after changing the GPUs or the CUDA toolkit."
+	fi
 }

@@ -116,6 +116,23 @@ explicitly requires otherwise.
   make it a hard dependency; its upstream build retrieves Chromium ANGLE and
   depot-tools sources dynamically, so package it separately only after those
   inputs can be pinned and built offline.
+- `comfy-kitchen` CUDA builds choose their architectures at build time. A value of
+  `COMFY_CUDA_ARCHS` already in the environment (for example from
+  `/etc/portage/env`) is used unchanged. Otherwise the ebuild reads the compute
+  capability of the GPUs in the build machine with `nvidia-smi` and stops with an
+  error when that fails. Never write a card into the ebuild: the same overlay is
+  used on machines with different GPUs.
+- Blackwell (compute capability 12.x) gets the family-specific code (`120f`) and
+  Hopper gets `90a-real`, as upstream's default list does. Other GPUs get
+  `<major><minor>-real`.
+- `CUDA_HOME` defaults to `${EPREFIX}/opt/cuda`, where
+  `dev-util/nvidia-cuda-toolkit` installs. Otherwise `setup.py` searches `PATH` and
+  `/usr/local/cuda` only.
+- `nvcc` accepts host GCC only up to the `GCC_MAX_VER` of its toolkit: 14 for CUDA
+  12.9.2 and 16 for CUDA 13.4.1 in the Gentoo tree. Check the toolkit ebuild when a
+  build stops with "unsupported GNU version".
+- Keep the notices in `pkg_setup` and `pkg_postinst` of the comfy-kitchen ebuild in
+  step with this behaviour.
 
 ### kwin-effects-glass
 
