@@ -50,13 +50,9 @@ jobs:
           # git is no longer shipped in stage3 images (removed upstream
           # 2026-08); required by the guru clone and changed-ebuild detection
           command -v git >/dev/null 2>&1 || emerge -1 --quiet dev-vcs/git
-          # Source preparation of autotools packages (cockpit) runs aclocal and
-          # autoreconf, which stage3 may not provide.
-          command -v autoreconf >/dev/null 2>&1 && command -v aclocal >/dev/null 2>&1 \
-            || emerge -1 --quiet sys-devel/autoconf sys-devel/automake || echo "autotools: emerge failed"
           echo ""
           echo "=== Tool check ==="
-          for tool in unzip tar gzip xz ar git autoreconf aclocal; do
+          for tool in unzip tar gzip xz ar git; do
             command -v $tool >/dev/null 2>&1 && echo "$tool: OK" || echo "$tool: MISSING"
           done
 

@@ -33,7 +33,6 @@ PKGS=(
   "kde-misc/kwin-effects-glass|4v3ngR/kwin-effects-glass||github-kwin-glass"
   "media-fonts/sarasa-gothic|be5invis/Sarasa-Gothic|v|github"
   "media-fonts/sarasa-term-sc-nerd|laishulu/Sarasa-Term-SC-Nerd|v|github"
-  "media-sound/sidra-bin|wimpysworld/sidra||github"
   "media-sound/yesplaymusic-bin|qier222/YesPlayMusic|v|github"
   "x11-themes/colloid-icon-theme|vinceliuice/Colloid-icon-theme||github-date-iso"
   "x11-themes/tela-icon-theme|vinceliuice/Tela-icon-theme||github-date-iso"
@@ -70,10 +69,7 @@ PKGS=(
   "net-misc/baidunetdisk|net-misc/baidunetdisk||gentoozh"
   "dev-util/datagrip|DG||jetbrains"
   "app-misc/bcompare|bcompare||scooter"
-  "app-admin/cockpit|cockpit-project/cockpit||github"
-  "app-admin/cockpit-machines|cockpit-project/cockpit-machines||github"
   "sci-misc/prism-llama-cpp|PrismML-Eng/llama.cpp||github-prism-build"
-  "sci-misc/kvmem-llama-cpp|kvmem/kvmem|v|github"
   "app-office/wps-office|wps-office-cn||aur"
   "app-misc/chatgpt-desktop|https://persistent.oaistatic.com/codex-app-prod/linux/deb/dists/stable/main/binary-amd64/Packages||openai-deb"
   "app-misc/claude-desktop|https://downloads.claude.ai/claude-desktop/apt/stable/dists/stable/main/binary-amd64/Packages||claude-deb"
@@ -118,9 +114,8 @@ get_latest_stable() {
   local current_ver="${2:-}"
 
   # Fetch releases list, pick first non-prerelease, non-draft
-  # Upstream sometimes publishes an rc as a plain release (kvmem marks
-  # v0.19.0-rc1 as a release), so the version itself is filtered too, the same
-  # way get_latest_tag filters tags.
+  # Upstream sometimes publishes an rc as a plain release, so the version itself
+  # is filtered too, the same way get_latest_tag filters tags.
   local latest
   latest=$(curl "${CURL_ARGS[@]}" "${GH_API}/repos/${repo}/releases?per_page=30" \
     | python3 -c '

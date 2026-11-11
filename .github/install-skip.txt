@@ -6,9 +6,8 @@
 # One package per line: category/package, then the reason, which must not
 # contain '#' or '|'. Packages not listed here are installed in CI. Remove an
 # entry once CI can provide what the package needs.
-app-admin/cockpit needs glib, json-glib, gnutls, krb5, polkit, systemd and pip to install
 dev-python/comfy-aimdo needs cmake and setuptools-scm to build
-dev-python/comfy-kitchen needs cmake, ninja and nanobind to build; DEPEND also pulls PyTorch
+dev-python/comfy-kitchen needs gpep517 and setuptools for the PEP 517 build; CUDA builds also need nanobind, cmake, ninja and nvcc; DEPEND also pulls PyTorch
 dev-python/comfyui-embedded-docs needs gpep517 and setuptools for the PEP 517 build
 dev-python/comfyui-frontend-package needs gpep517 and setuptools for the PEP 517 build
 dev-python/comfyui-workflow-templates needs gpep517 and setuptools for the PEP 517 build

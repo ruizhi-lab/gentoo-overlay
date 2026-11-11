@@ -129,21 +129,6 @@ explicitly requires otherwise.
 - Keep compatibility backports only on affected release ebuilds, and remove
   them when a later upstream release includes the fix.
 
-### cockpit and cockpit-machines
-
-- Package locations: `app-admin/cockpit` and `app-admin/cockpit-machines`.
-- Cockpit Machines requires a Cockpit bridge version compatible with upstream's
-  minimum; do not assume its release number must match the Cockpit Machines PV.
-- `libvirt-dbus` is an optional backend. Cockpit Machines can use virsh when it
-  is absent, so keep it as a QA/integration note rather than a hard dependency.
-- Follow upstream stable GitHub releases. Release tags are valid Gentoo
-  versions, so use the `github` update-check type without a version prefix.
-- Preserve Cockpit's Gentoo branding assets and PAM configuration under
-  `app-admin/cockpit/files/`.
-- Keep optional Cockpit integrations behind their USE flags, and ensure all
-  required account, service, and runtime dependencies are available from the
-  configured repository masters before claiming the packages are buildable.
-
 ### Strata
 
 - Package location: `sci-ml/strata`. Strata is an inference engine plus a Python
@@ -158,8 +143,7 @@ explicitly requires otherwise.
   such as the 27B (`qwen35`), with "this model type is not supported by the
   Strata engine". DeepSeek-V4.1 needs `STRATA_BUILD_DSV41=ON`, which this
   package does not build, so it is not available here either. Users with other
-  models want `sci-misc/kvmem-llama-cpp`, `sci-misc/prism-llama-cpp` or
-  `sci-misc/llama-cpp` from guru.
+  models want `sci-misc/prism-llama-cpp` or `sci-misc/llama-cpp` from guru.
 - Version bumps follow upstream tags, not the release list. Upstream ships
   patch releases as tags only: `v0.2.7.1` is 127 commits newer than `v0.2.7`
   and is newer than the `v0.2.7` GitHub release, whose notes fold the 0.2.7.1
