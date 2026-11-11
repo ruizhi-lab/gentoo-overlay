@@ -50,9 +50,13 @@ jobs:
           # git is no longer shipped in stage3 images (removed upstream
           # 2026-08); required by the guru clone and changed-ebuild detection
           command -v git >/dev/null 2>&1 || emerge -1 --quiet dev-vcs/git
+          # Source preparation of autotools packages (cockpit) runs aclocal and
+          # autoreconf, which stage3 may not provide.
+          command -v autoreconf >/dev/null 2>&1 && command -v aclocal >/dev/null 2>&1 \
+            || emerge -1 --quiet sys-devel/autoconf sys-devel/automake || echo "autotools: emerge failed"
           echo ""
           echo "=== Tool check ==="
-          for tool in unzip tar gzip xz ar git; do
+          for tool in unzip tar gzip xz ar git autoreconf aclocal; do
             command -v $tool >/dev/null 2>&1 && echo "$tool: OK" || echo "$tool: MISSING"
           done
 
@@ -116,13 +120,14 @@ jobs:
                 case "$pkg" in
                   goldendict-ng|latte-dock-ng|xrdp|xorgxrdp)
                     continue ;;
-                  *) echo "$e" ;;
+                  *) echo "${e#./}" ;;
                 esac
               done
             )
             echo "ebuilds<<EOF" >> $GITHUB_OUTPUT
             echo "${EBUILDS}" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
+            printf '%s\n' ${EBUILDS} > "${GITHUB_WORKSPACE}/changed-ebuilds.txt"
             echo "Testing binary ebuilds only: ${EBUILDS}"
             exit 0
           else
@@ -150,6 +155,7 @@ jobs:
           fi
 
           EBUILDS=$(printf '%s\n' ${EBUILDS} | sed '/^$/d' | sort -u)
+          printf '%s\n' ${EBUILDS} | sed '/^$/d' > "${GITHUB_WORKSPACE}/changed-ebuilds.txt"
           {
             echo "ebuilds<<EOF"
             if [ -n "${EBUILDS}" ]; then printf '%s\n' "${EBUILDS}"; fi
@@ -179,26 +185,66 @@ jobs:
           export PKGDIR="${GITHUB_WORKSPACE}/packages"
           mkdir -p "${PORTAGE_TMPDIR}" "${DISTDIR}" "${PKGDIR}"
 
+          # Packages listed in .github/install-skip.txt need build dependencies
+          # that the stage3 image does not provide, so they get a source
+          # preparation test instead of an install test. Every other changed
+          # ebuild must install.
+          SKIP_FILE="${GITHUB_WORKSPACE}/repo/.github/install-skip.txt"
+          SKIP_LIST="${GITHUB_WORKSPACE}/skip-list.txt"
+          sed -e 's/#.*$//' -e '/^[[:space:]]*$/d' "${SKIP_FILE}" > "${SKIP_LIST}" \
+            || { echo "::error::cannot read ${SKIP_FILE}"; exit 1; }
+          while read -r skip_pkg skip_reason; do
+            if [ -z "${skip_reason}" ]; then
+              echo "::error::${SKIP_FILE}: ${skip_pkg} needs a reason"
+              exit 1
+            fi
+            if [ ! -d "${GITHUB_WORKSPACE}/repo/${skip_pkg}" ]; then
+              echo "::error::${SKIP_FILE} lists ${skip_pkg}, which is not in the overlay"
+              exit 1
+            fi
+          done < "${SKIP_LIST}"
+
+          SUMMARY="${GITHUB_STEP_SUMMARY:-/dev/null}"
+          {
+            echo "### Ebuild checks (${{ matrix.init }})"
+            echo ""
+            echo "| ebuild | check | result | note |"
+            echo "| --- | --- | --- | --- |"
+          } >> "${SUMMARY}"
+
           FAILED=""
           PASSED=""
 
-          while IFS= read -r ebuild; do
-            [ -z "${ebuild}" ] && continue
-            ebuild="${GITHUB_WORKSPACE}/repo/${ebuild}"
+          # The ebuild gets /dev/null as stdin, so it cannot consume the list.
+          while read -r rel; do
+            [ -n "${rel}" ] || continue
+            ebuild="${GITHUB_WORKSPACE}/repo/${rel}"
             pkg=$(basename "$(dirname "${ebuild}")")
+            atom=$(printf '%s\n' "${rel}" | cut -d/ -f1,2)
+            note=""
+            if awk -v a="${atom}" '$1 == a { found = 1 } END { exit (found ? 0 : 1) }' "${SKIP_LIST}"; then
+              check="prepare only"
+              actions="clean unpack prepare"
+              note=$(awk -v a="${atom}" '$1 == a { sub(/^[^[:space:]]+[[:space:]]*/, ""); print; exit }' "${SKIP_LIST}")
+            else
+              check="install"
+              actions="clean install"
+            fi
 
             echo ""
-            echo "=== ${pkg} ==="
-
-            if ebuild "${ebuild}" clean install; then
+            echo "=== ${pkg} (${check}) ==="
+            if ebuild "${ebuild}" ${actions} < /dev/null; then
               echo "PASS: ${pkg}"
               PASSED="${PASSED} ${pkg}"
+              result="PASS"
             else
               rc=$?
               echo "FAIL: ${pkg} (exit: ${rc})"
               FAILED="${FAILED} ${pkg}"
+              result="FAIL"
             fi
-          done <<< "${{ steps.changed.outputs.ebuilds }}"
+            echo "| ${rel} | ${check} | ${result} | ${note} |" >> "${SUMMARY}"
+          done < "${GITHUB_WORKSPACE}/changed-ebuilds.txt"
 
           echo ""
           echo "========================================"

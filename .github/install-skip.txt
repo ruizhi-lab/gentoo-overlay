@@ -1,0 +1,22 @@
+# Packages whose install test is replaced by a source preparation test in
+# ebuild-ci.yml. Their build dependencies are not in the stage3 image, so
+# `ebuild clean install` cannot succeed there. `clean unpack prepare` still
+# checks the distfiles, their digests and the patches.
+#
+# One package per line: category/package, then the reason, which must not
+# contain '#' or '|'. Packages not listed here are installed in CI. Remove an
+# entry once CI can provide what the package needs.
+app-admin/cockpit needs glib, json-glib, gnutls, krb5, polkit, systemd and pip to install
+dev-python/comfy-aimdo needs cmake and setuptools-scm to build
+dev-python/comfy-kitchen needs cmake, ninja and nanobind to build; DEPEND also pulls PyTorch
+dev-python/comfyui-embedded-docs needs gpep517 and setuptools for the PEP 517 build
+dev-python/comfyui-frontend-package needs gpep517 and setuptools for the PEP 517 build
+dev-python/comfyui-workflow-templates needs gpep517 and setuptools for the PEP 517 build
+dev-python/comfyui-workflow-templates-core needs gpep517 and setuptools for the PEP 517 build
+dev-python/comfyui-workflow-templates-json needs gpep517 and setuptools for the PEP 517 build
+dev-python/comfyui-workflow-templates-media-api needs gpep517 and setuptools for the PEP 517 build
+dev-python/comfyui-workflow-templates-media-assets-one needs gpep517 and setuptools for the PEP 517 build
+dev-python/comfyui-workflow-templates-media-assets-two needs gpep517 and setuptools for the PEP 517 build
+dev-python/comfyui-workflow-templates-media-image needs gpep517 and setuptools for the PEP 517 build
+dev-python/comfyui-workflow-templates-media-other needs gpep517 and setuptools for the PEP 517 build
+dev-python/comfyui-workflow-templates-media-video needs gpep517 and setuptools for the PEP 517 build
