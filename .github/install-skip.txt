@@ -19,3 +19,4 @@ dev-python/comfyui-workflow-templates-media-assets-two needs gpep517 and setupto
 dev-python/comfyui-workflow-templates-media-image needs gpep517 and setuptools for the PEP 517 build
 dev-python/comfyui-workflow-templates-media-other needs gpep517 and setuptools for the PEP 517 build
 dev-python/comfyui-workflow-templates-media-video needs gpep517 and setuptools for the PEP 517 build
+sci-ml/strata needs cmake, ninja and, with the default +cuda USE, the CUDA toolkit to build

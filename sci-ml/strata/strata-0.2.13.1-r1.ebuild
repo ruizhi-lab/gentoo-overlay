@@ -499,8 +499,8 @@ pkg_postinst() {
 	elog
 	elog "The engine runs Qwen3.8-Flash-Next only: 'strata launch' offers its GSQ-RCO,"
 	elog "Q2_0 and UD quantizations, and 'strata models import' refuses any other GGUF"
-	elog "file, naming llama-server instead. Use sci-misc/kvmem-llama-cpp or"
-	elog "sci-misc/prism-llama-cpp for models of another family or size."
+	elog "file, naming llama-server instead. Use sci-misc/prism-llama-cpp for models of"
+	elog "another family or size."
 	elog
 	elog "The engine is a system component under /usr/lib/${PN}/components,"
 	elog "upgraded with Portage. 'strata install' and 'strata update' refuse to run and name"

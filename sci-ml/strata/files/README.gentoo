@@ -94,8 +94,8 @@ Qwen3.8-27B (qwen35), is refused by `strata models import`:
     Custom model API with llama-server instead)
 
 For those, a llama.cpp package is the tool - sci-misc/llama-cpp from guru, or
-sci-misc/kvmem-llama-cpp and sci-misc/prism-llama-cpp from this overlay: the
-engine here is the Flash-Next one and its kernels are written for it. An MTP
+sci-misc/prism-llama-cpp from this overlay: the engine here is the
+Flash-Next one and its kernels are written for it. An MTP
 drafter file (the -mtp.gguf beside a model) and an mmproj are parts of a
 supported selection, not models of their own, and importing either on its own
 is refused too.
