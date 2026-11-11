@@ -67,6 +67,10 @@ python_configure_all() {
 python_compile() {
 	if use cuda; then
 		export COMFY_KITCHEN_BUILD_NO_HIP=1
+		# setup.py looks for nvcc in CUDA_HOME, then in PATH, then in
+		# /usr/local/cuda. The toolkit this ebuild depends on is installed
+		# under /opt/cuda, which is in PATH only when the system adds it.
+		export CUDA_HOME="${CUDA_HOME:-${EPREFIX}/opt/cuda}"
 	elif use rocm; then
 		export COMFY_KITCHEN_BUILD_HIP=1
 	fi
