@@ -14,9 +14,10 @@ ROCM_VERSION="7.0"
 
 inherit cmake cuda multiprocessing python-single-r1 rocm toolchain-funcs
 
-# Strata takes ggml from a pinned llama.cpp commit (third_party/ggml/VERSION.txt upstream) and builds its
-# own prompt kernels and CPU experts from that exact tree: a llama.cpp release does not carry the same
-# MMQ scheduler. The tree is a distfile, so a build never downloads anything.
+# Strata builds its engine, its picture reader and its CPU experts against the ggml tree from the
+# llama.cpp commit pinned in third_party/ggml/VERSION.txt upstream. The tree is a distfile, so a build
+# never downloads anything; the exact commit matters because the engine's kernels are written against
+# that version.
 LLAMA_COMMIT="3cf03257f219afbe7334045ff7c6a06ac68c627d"
 
 DESCRIPTION="Inference engine and terminal for Qwen3.8-Flash-Next"
@@ -183,8 +184,12 @@ src_configure() {
 		mycmakeargs+=(
 			-DSTRATA_ENABLE_CUDA=OFF
 			-DSTRATA_ENABLE_HIP=ON
-			# the AMD path's MMQ prompt kernels; CUDA-only option, an error with HIP off
+			# Upstream's release builds leave llama.cpp's MMQ prompt kernels out (-DSTRATA_MMQ=OFF)
+			# and use Strata's own fused kernels instead. PREFILL_MMQ names the HIP MMQ path and
+			# only has an effect together with STRATA_MMQ=ON; it is passed as upstream's
+			# packaging/build_hip_linux.sh does, so this build matches their release engine.
 			-DSTRATA_PREFILL_MMQ=ON
+			-DSTRATA_MMQ=OFF
 			-DCMAKE_HIP_ARCHITECTURES="$(get_amdgpu_flags)"
 		)
 		export ROCM_TARGET_LST="${T}/rocm-targets.lst"
@@ -194,6 +199,8 @@ src_configure() {
 		mycmakeargs+=(
 			-DSTRATA_ENABLE_CUDA=ON
 			-DSTRATA_ENABLE_HIP=OFF
+			# upstream's release default: no llama.cpp MMQ prompt kernels, Strata's own instead
+			-DSTRATA_MMQ=OFF
 			-DCMAKE_CUDA_ARCHITECTURES="$(cuda_architectures)"
 		)
 		local -x CUDAHOSTCXX="$(cuda_gccdir)"
@@ -444,8 +451,8 @@ install_terminal() {
 
 	insinto "${root}/data"
 	doins data/gguf_fingerprints.json data/draft_vocab.bin data/draft_vocab_cyrillic.bin \
-		data/draft_vocab_en.bin data/draft_vocab_fr.bin data/expert-profile.bin \
-		data/expert-profile-coder.bin
+		data/draft_vocab_en.bin data/draft_vocab_fr.bin data/draft_vocab_latin.bin \
+		data/expert-profile.bin data/expert-profile-coder.bin
 
 	# drafting_fetch.provide_licence() copies this Apache-2.0 text and the "modified by Strata"
 	# notice beside the tuned drafter it fetches, resolving it from the install root. Upstream's
