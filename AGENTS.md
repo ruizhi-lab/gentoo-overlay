@@ -191,7 +191,8 @@ explicitly requires otherwise.
   splitdebug rewrites the binaries after `src_install` and the terminal then
   refuses to start them. Build the package with upstream's own
   `tools/packaging/package_engine.py` rather than reproducing the manifest by
-  hand; from 0.2.16 that is `terminal/tools/packaging/`.
+  hand. Those helpers stay at the top-level `tools/packaging/` in 0.2.16, while
+  the terminal's own modules moved to `terminal/tools/`: do not confuse them.
 - Never call `cmake --install`; only `cmake --build` and copy the programs. That
   is what keeps upstream's vendored third-party code out of `/usr/include` and
   `/usr/$(get_libdir)`.
@@ -225,14 +226,14 @@ explicitly requires otherwise.
   without code for the user's card stops at startup. Since 0.2.16 the engine
   refuses anything below sm_80 with a configure error, and sm_60/sm_70 also
   need `-DSTRATA_EXPERIMENTAL_SM60=ON`; the ebuild does not set it.
-- The terminal's file set is the one `terminal/tools/packaging/package_terminal.py`
-  stages: `terminal/strata.py`, `strata_cli`, `strata_control`, `serve`,
-  `tools/` (the `TOOLS_SUBSET` three, since `strata_control` imports `tools.*`
-  from the install root), `ref/load.py`, `data/`, `bench/prompts/standard-v1`
-  and the two docs. Drop the API server's `test_*.py` modules. The Rust helpers
-  under `terminal/crates/` are opt-in and off by default
-  (`STRATA_NATIVE_HELPERS`), so they are not shipped. Re-check that list when
-  bumping: a missing module fails at run time, not at build time.
+- The terminal's file set is the one `tools/packaging/package_terminal.py`
+  stages from the `terminal/` folder: `strata.py`, `strata_cli`, `strata_control`,
+  `serve`, `tools/` (the `TOOLS_SUBSET` three, since `strata_control` imports
+  `tools.*` from the install root), `ref/load.py`, `data/`,
+  `bench/prompts/standard-v1` and the two docs. Drop the API server's `test_*.py`
+  modules. The Rust helpers under `terminal/crates/` are opt-in and off by
+  default (`STRATA_NATIVE_HELPERS`), so they are not shipped. Re-check that list
+  when bumping: a missing module fails at run time, not at build time.
 - Keep `files/redact-portage-managed.patch`, which makes `strata install` and
   `strata update` refuse under Portage and name emerge instead. It is not
   required to build, but it is required by the packaging policy that Portage

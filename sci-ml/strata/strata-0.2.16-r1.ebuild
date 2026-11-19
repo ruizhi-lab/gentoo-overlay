@@ -26,6 +26,10 @@ S="${WORKDIR}/Strata-${PV}"
 # Upstream moved the engine, the terminal and its build helpers into their own top-level folders.
 ENGINE_S="${S}/engine"
 TERMINAL_S="${S}/terminal"
+# cmake.eclass looks for CMakeLists.txt in ${S}; since 0.2.16 the top-level project is engine/CMakeLists.txt,
+# so point both the configure and the patch hook at it. Without this, src_prepare dies on "Unable to find
+# CMakeLists.txt" before anything is built.
+CMAKE_USE_DIR="${ENGINE_S}"
 
 LICENSE="MIT"
 SLOT="0"
@@ -393,7 +397,7 @@ package_engine() {
 		local ver_num=$(( ver[0] * 100000 + ver[1] * 100 + ver[2] ))
 		einfo "hipBLASLt ${ver[0]}.${ver[1]}.${ver[2]} (${ver_num})"
 
-		python3 -I "${TERMINAL_S}/tools/packaging/stage_tuning.py" \
+		python3 -I "${S}/tools/packaging/stage_tuning.py" \
 			--stage "${stage}" \
 			--archs "${arches[*]}" \
 			--version "${ver_num}" \
@@ -402,7 +406,9 @@ package_engine() {
 
 	# A package without the reader answers text only; package_engine.py says so itself when --src has no
 	# strata-vision, so --no-picture-reader is not needed either way.
-	python3 -I "${TERMINAL_S}/tools/packaging/package_engine.py" \
+	# The packaging helpers stay at the top level (tools/packaging/) while the terminal's modules moved to
+	# terminal/tools/, so the two paths in this function deliberately differ.
+	python3 -I "${S}/tools/packaging/package_engine.py" \
 		--src "${stage}" \
 		--backend "${backend}" \
 		--version "$(engine_version)" \
