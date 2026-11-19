@@ -19,9 +19,9 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE} ?? ( cuda rocm )"
 
 RDEPEND="
 	${PYTHON_DEPS}
-	~dev-python/comfyui-embedded-docs-0.5.16[${PYTHON_SINGLE_USEDEP}]
-	~dev-python/comfyui-frontend-package-1.58.5[${PYTHON_SINGLE_USEDEP}]
-	~dev-python/comfyui-workflow-templates-0.11.105[${PYTHON_SINGLE_USEDEP}]
+	~dev-python/comfyui-embedded-docs-0.5.17[${PYTHON_SINGLE_USEDEP}]
+	~dev-python/comfyui-frontend-package-1.59.6[${PYTHON_SINGLE_USEDEP}]
+	~dev-python/comfyui-workflow-templates-0.11.111[${PYTHON_SINGLE_USEDEP}]
 	~dev-python/comfy-aimdo-0.6.0[${PYTHON_SINGLE_USEDEP}]
 	~dev-python/comfy-kitchen-0.2.41[cuda?,rocm?,${PYTHON_SINGLE_USEDEP}]
 	$(python_gen_cond_dep '
@@ -90,4 +90,20 @@ src_install() {
 	exec ${EPYTHON} /usr/lib/${PN}/main.py --base-directory "\${data_dir}" "\$@"
 	EOF_LAUNCHER
 	dobin "${T}/${PN}"
+}
+
+pkg_postinst() {
+	elog "ComfyUI has no authentication of its own. Do not expose its port (8188 by"
+	elog "default) to the public internet: bind it to 127.0.0.1 with --listen"
+	elog "127.0.0.1, and reach it over SSH port forwarding or a VPN."
+	elog
+	elog "This package installs upstream ComfyUI and its pinned asset packages only. It"
+	elog "does not install ComfyUI-Manager or any custom node, because custom nodes are"
+	elog "the main vector for turning an exposed instance into a cryptominer or worse."
+	elog "Before installing one, check that it does not execute arbitrary input:"
+	elog "nodes such as FL_CodeNode, SrlEval, EvaluateMultiple or any shell executor"
+	elog "turn a workflow into remote code execution when a stranger can submit it."
+	elog
+	elog "If a node needs ultralytics, avoid 8.3.41 and 8.3.42: those PyPI releases"
+	elog "shipped a crypto miner on Linux and macOS."
 }

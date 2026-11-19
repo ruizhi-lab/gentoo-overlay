@@ -152,9 +152,9 @@ explicitly requires otherwise.
   terminal and API server, so it belongs in `sci-ml` (machine learning and NLP)
   rather than `sci-misc`, which is the fallback for packages that fit no other
   `sci-*` category. `sci-ml/ollama` and `sci-ml/ggml` are the neighbours.
-- Strata runs one model family. `data/gguf_fingerprints.json` holds 17
+- Strata runs one model family. `terminal/data/gguf_fingerprints.json` holds 23
   selections under the qwen, swift, coder, unsloth and gyro keys and every one
-  is Qwen3.8-Flash-Next (`qwen35moe`), split into two shards with exact upstream
+  is Qwen3.8-Flash-Next (`qwen4exp`), split into two shards with exact upstream
   file names. Do not describe the package as running arbitrary GGUF models:
   `strata models import` refuses anything else, including another Qwen3.8 size
   such as the 27B (`qwen35`), with "this model type is not supported by the
@@ -171,13 +171,16 @@ explicitly requires otherwise.
   quietly on an older PV once a release has a newer tag-only successor. Treat
   its silence as "no newer release", not "current": confirm against the tag
   list when touching the package.
-- ggml comes from the llama.cpp commit pinned in upstream's
-  `third_party/ggml/VERSION.txt`. When bumping, re-read that file and update
-  `LLAMA_COMMIT`: leaving `STRATA_GGML_DIR` unset makes CMake fetch the tree
-  over the network at configure time, which fails in the build sandbox, and a
-  different commit changes the MMQ scheduler the engine's own kernels are
-  written against. Keep the pinned tree as a distfile and pass
-  `-DSTRATA_GGML_DIR` so no fetch happens.
+- ggml is vendored: from 0.2.16 upstream keeps the pinned llama.cpp commit
+  (`3cf03257f219afbe7334045ff7c6a06ac68c627d`) inside the tarball as
+  `engine/third_party/strata-ggml`, so no ggml distfile or `-DSTRATA_GGML_DIR`
+  is needed and the build stays offline. `engine/cmake/strata_ggml.cmake`
+  builds that tree by default and treats `-DSTRATA_GGML_DIR` as an override for
+  a llama.cpp checkout; do not set it. When bumping, re-read
+  `engine/third_party/ggml/VERSION.txt` only to confirm the pin still matches
+  the vendored tree (`tools/check_vendored.py` checks that upstream). Up to
+  0.2.15 the tree came from a separate llama.cpp distfile; that ebuild's
+  `LLAMA_COMMIT` is what 0.2.16 vendored.
 - Do not add a `system-ggml` USE flag or link against `sci-ml/ggml`. The engine
   links ggml statically from its pinned tree and installs no headers or
   libraries, so it already coexists with `sci-ml/ggml` and `sci-misc/llama-cpp`;
@@ -187,35 +190,48 @@ explicitly requires otherwise.
   records the SHA-256 of every file). Keep `RESTRICT="strip"`; stripping or
   splitdebug rewrites the binaries after `src_install` and the terminal then
   refuses to start them. Build the package with upstream's own
-  `packaging/package_engine.py` rather than reproducing the manifest by hand.
+  `tools/packaging/package_engine.py` rather than reproducing the manifest by
+  hand; from 0.2.16 that is `terminal/tools/packaging/`.
 - Never call `cmake --install`; only `cmake --build` and copy the programs. That
-  is what keeps ggml and llama out of `/usr/include` and `/usr/$(get_libdir)`.
-- `USE="vision"` builds `tools/vision` into the picture reader. Build it from
-  the same architecture list as the engine and record that list as
+  is what keeps upstream's vendored third-party code out of `/usr/include` and
+  `/usr/$(get_libdir)`.
+- The source tree splits its top-level folders from 0.2.16: the engine project
+  is `engine/`, the terminal (Python, `data/`, `ref/`, `tools/`, `bench/`, and
+  the packaging helpers) is `terminal/`, and the docs stay in `docs/`. The ebuild
+  sets `ENGINE_S`/`TERMINAL_S` for them. `src_configure` configures `engine/`,
+  and the terminal is installed with `terminal/` as the source root.
+- `USE="vision"` builds `terminal/tools/vision` into the picture reader. Build
+  it from the same architecture list as the engine and record that list as
   `vision_archs` in `BUILD.json`: `package_engine.py` refuses a CUDA package
   whose reader does not cover the engine's architectures, and a reader carried
-  over from another build dies on a card the engine itself handles.
+  over from another build dies on a card the engine itself handles. Since
+  0.2.16 the reader is Strata's own vision tower (`tools/vision/own`) and needs
+  no llama.cpp or ggml, so do not pass `-DLLAMA_DIR`.
 - On HIP the vision project renames its only target to `strata-vision-hip`, so
   the CPU fallback and the GPU reader come from two configure runs of the same
-  project, as upstream's `packaging/build_hip_linux.sh` does. A single run
+  project, as upstream's `tools/packaging/build_hip_linux.sh` does. A single run
   yields only the GPU reader.
 - `sci-libs/hipBLASLt` installs `hipblaslt-version.h` flat as
   `<prefix>/include/hipblaslt-version.h`, but upstream's
-  `packaging/stage_tuning.py` looks under `include/hipblaslt/`. Read the
+  `tools/packaging/stage_tuning.py` looks under `include/hipblaslt/`. Read the
   version from the flat header and pass it with `--version` instead of relying
   on `--rocm`.
 - Upstream's HIP backend refuses architectures it does not know
-  (`cmake/hip_backend.cmake`). Take the target list from `rocm.eclass`'s
+  (`engine/cmake/hip_backend.cmake`). Take the target list from `rocm.eclass`'s
   `amdgpu_targets_*` USE_EXPAND so it matches the installed ROCm, and never let
   CMake or hipcc probe the build host's cards.
 - CUDA builds take `CMAKE_CUDA_ARCHITECTURES` from `/etc/portage/env` rather
   than upstream's default (sm_86, sm_89 and the sm_120 PTX), because a binary
-  without code for the user's card stops at startup.
-- The terminal's file set is the one `packaging/package_terminal.py` stages:
-  `strata.py`, `strata_cli`, `strata_control`, `serve`, `tools/` (the
-  `TOOLS_SUBSET` three, since `strata_control` imports `tools.*` from the
-  install root), `ref/load.py`, `data/`, `bench/prompts/standard-v1` and the two
-  docs. Drop the API server's `test_*.py` modules. Re-check that list when
+  without code for the user's card stops at startup. Since 0.2.16 the engine
+  refuses anything below sm_80 with a configure error, and sm_60/sm_70 also
+  need `-DSTRATA_EXPERIMENTAL_SM60=ON`; the ebuild does not set it.
+- The terminal's file set is the one `terminal/tools/packaging/package_terminal.py`
+  stages: `terminal/strata.py`, `strata_cli`, `strata_control`, `serve`,
+  `tools/` (the `TOOLS_SUBSET` three, since `strata_control` imports `tools.*`
+  from the install root), `ref/load.py`, `data/`, `bench/prompts/standard-v1`
+  and the two docs. Drop the API server's `test_*.py` modules. The Rust helpers
+  under `terminal/crates/` are opt-in and off by default
+  (`STRATA_NATIVE_HELPERS`), so they are not shipped. Re-check that list when
   bumping: a missing module fails at run time, not at build time.
 - Keep `files/redact-portage-managed.patch`, which makes `strata install` and
   `strata update` refuse under Portage and name emerge instead. It is not
@@ -223,7 +239,8 @@ explicitly requires otherwise.
   owns `/usr/lib/strata/components`: a root-run `strata update`, `rollback`,
   `install-file`, `use` or `remove` would otherwise write or delete files
   there that the package database does not know about, leaving the installed
-  component inconsistent with what this ebuild merged. Upstream's
+  component inconsistent with what this ebuild merged. `components add-build`
+  joined that list in 0.2.16 and is guarded too. Upstream's
   `STRATA_NO_ACQUIRE` is not a substitute: it only guards downloads and install
   steps, does not cover the `use`/`remove` writers, and does not name emerge.
 - The guard is gated on `STRATA_PACKAGE_MANAGED=1`, which only the installed

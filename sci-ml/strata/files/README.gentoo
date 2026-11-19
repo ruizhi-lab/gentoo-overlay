@@ -63,10 +63,10 @@ experiment with a per-user engine, export
 Pictures
 --------
 USE="vision" (on by default) builds the picture reader `strata-vision` from
-tools/vision, so a prompt can carry images. It is a second CMake project that
-builds llama.cpp's mtmd and ggml again, for the same architectures as the
-engine: a reader carried over from a different build fails on a card the engine
-itself handles.
+terminal/tools/vision, so a prompt can carry images. It is a second CMake
+project, built for the same architectures as the engine: a reader carried over
+from a different build fails on a card the engine itself handles. Since 0.2.16
+it is Strata's own vision tower and builds no llama.cpp or ggml of its own.
 
 On CUDA there is one reader, which reads on the GPU when the engine starts it
 with --gpu and on the CPU otherwise. On HIP there are two, as upstream's own
@@ -84,11 +84,11 @@ notes are in the engine's docs directory and at
 https://github.com/Niko1221/Strata.
 
 Strata runs one model family, not arbitrary GGUF files. Its catalogue in
-data/gguf_fingerprints.json has 17 entries under the qwen, swift, coder,
-unsloth and gyro keys, and every one of them is Qwen3.8-Flash-Next (qwen35moe)
-in a GSQ-RCO, Q2_0 or UD quantization, split into two shards with the exact
-upstream file names. Another model, including a different Qwen3.8 size such as
-Qwen3.8-27B (qwen35), is refused by `strata models import`:
+terminal/data/gguf_fingerprints.json has 23 selections under the qwen, swift,
+coder, unsloth and gyro keys, and every one of them is Qwen3.8-Flash-Next
+(qwen4exp), in a GSQ-RCO, Q2_0, UD or Gyro-TQ quantization, split into two
+shards with the exact upstream file names. Another model, including a different
+Qwen3.8 size such as Qwen3.8-27B (qwen35), is refused by `strata models import`:
 
     this model type is not supported by the Strata engine (add it as a
     Custom model API with llama-server instead)

@@ -14,21 +14,18 @@ ROCM_VERSION="7.0"
 
 inherit cmake cuda multiprocessing python-single-r1 rocm toolchain-funcs
 
-# Strata builds its engine, its picture reader and its CPU experts against the ggml tree from the
-# llama.cpp commit pinned in third_party/ggml/VERSION.txt upstream. The tree is a distfile, so a build
-# never downloads anything; the exact commit matters because the engine's kernels are written against
-# that version.
-LLAMA_COMMIT="3cf03257f219afbe7334045ff7c6a06ac68c627d"
+# Up to 0.2.15 the engine built ggml from a llama.cpp checkout pinned in third_party/ggml/VERSION.txt,
+# which this ebuild carried as a second distfile. 0.2.16 vendors the very same llama.cpp commit
+# (3cf03257f219afbe7334045ff7c6a06ac68c627d) as engine/third_party/strata-ggml, and the picture reader
+# became Strata's own tower with no llama.cpp or ggml inside, so the tarball builds offline on its own.
 
 DESCRIPTION="Inference engine and terminal for Qwen3.8-Flash-Next"
 HOMEPAGE="https://github.com/Niko1221/Strata"
-SRC_URI="
-	https://github.com/Niko1221/Strata/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz
-	https://github.com/ggml-org/llama.cpp/archive/${LLAMA_COMMIT}.tar.gz
-		-> llama.cpp-${LLAMA_COMMIT}.tar.gz
-"
+SRC_URI="https://github.com/Niko1221/Strata/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz"
 S="${WORKDIR}/Strata-${PV}"
-LLAMA_S="${WORKDIR}/llama.cpp-${LLAMA_COMMIT}"
+# Upstream moved the engine, the terminal and its build helpers into their own top-level folders.
+ENGINE_S="${S}/engine"
+TERMINAL_S="${S}/terminal"
 
 LICENSE="MIT"
 SLOT="0"
@@ -164,8 +161,11 @@ engine_platform() {
 
 engine_version() {
 	local ver
-	ver=$(sed -n 's/^project(strata VERSION \([0-9][0-9.]*\).*/\1/p' "${S}/CMakeLists.txt")
-	[[ -n ${ver} ]] || die "could not read the engine version from CMakeLists.txt"
+	# Upstream's project() line is `project(strata VERSION 0.1.62 LANGUAGES CXX)` in engine/CMakeLists.txt:
+	# the engine build number, not PV. A second project() line does not exist, but take the first anyway.
+	ver=$(sed -n 's/^[[:space:]]*project([^)]*VERSION[[:space:]]*\([0-9][0-9.]*\).*/\1/p' \
+		"${ENGINE_S}/CMakeLists.txt" | head -n 1)
+	[[ -n ${ver} ]] || die "could not read the engine version from engine/CMakeLists.txt"
 	echo "${ver}"
 }
 
@@ -174,9 +174,9 @@ src_configure() {
 		-DSTRATA_BUILD_TESTS=OFF
 		# upstream's release engine is portable: an AVX2 baseline instead of whatever CPU compiled it
 		-DSTRATA_PORTABLE=ON
-		# the pinned llama.cpp tree instead of FetchContent
-		-DSTRATA_GGML_DIR="${LLAMA_S}"
 	)
+	# 0.2.16 keeps ggml in engine/third_party/strata-ggml and gives the reader no llama.cpp at all, so
+	# -DSTRATA_GGML_DIR is left unset: it is the override for a llama.cpp checkout, not a requirement.
 
 	if use hip; then
 		# cmake/hip_backend.cmake refuses every architecture it does not know, so the list comes from
@@ -184,12 +184,6 @@ src_configure() {
 		mycmakeargs+=(
 			-DSTRATA_ENABLE_CUDA=OFF
 			-DSTRATA_ENABLE_HIP=ON
-			# Upstream's release builds leave llama.cpp's MMQ prompt kernels out (-DSTRATA_MMQ=OFF)
-			# and use Strata's own fused kernels instead. PREFILL_MMQ names the HIP MMQ path and
-			# only has an effect together with STRATA_MMQ=ON; it is passed as upstream's
-			# packaging/build_hip_linux.sh does, so this build matches their release engine.
-			-DSTRATA_PREFILL_MMQ=ON
-			-DSTRATA_MMQ=OFF
 			-DCMAKE_HIP_ARCHITECTURES="$(get_amdgpu_flags)"
 		)
 		export ROCM_TARGET_LST="${T}/rocm-targets.lst"
@@ -200,7 +194,7 @@ src_configure() {
 			-DSTRATA_ENABLE_CUDA=ON
 			-DSTRATA_ENABLE_HIP=OFF
 			# upstream's release default: no llama.cpp MMQ prompt kernels, Strata's own instead
-			-DSTRATA_MMQ=OFF
+			# (-DSTRATA_MMQ and -DSTRATA_PREFILL_MMQ left the tree in 0.2.16, with llama.cpp's ggml-cuda)
 			-DCMAKE_CUDA_ARCHITECTURES="$(cuda_architectures)"
 		)
 		local -x CUDAHOSTCXX="$(cuda_gccdir)"
@@ -232,10 +226,11 @@ src_configure() {
 	cmake_src_configure
 }
 
-# The picture reader, tools/vision/strata-vision: its own CMake project, because it links llama.cpp's
-# mtmd beside the engine's ggml. It is built for the same architectures as the engine on purpose: a
-# reader carried over from another build dies with "device kernel image is invalid" on a card the
-# engine itself handles (#3669), and package_engine.py refuses such a package.
+# The picture reader, terminal/tools/vision/strata-vision: its own CMake project. Up to 0.2.15 it
+# linked llama.cpp's mtmd beside the engine's ggml; since 0.2.16 it is Strata's own vision tower
+# (tools/vision/own) and builds no llama.cpp or ggml at all. It is built for the same architectures as
+# the engine on purpose: a reader carried over from another build dies with "device kernel image is
+# invalid" on a card the engine itself handles (#3669), and package_engine.py refuses such a package.
 #
 # A CUDA build has one reader, strata-vision, which reads on the GPU when started with --gpu and on the
 # CPU otherwise. A HIP build has two, exactly as upstream's own packaging ships them: the CPU reader
@@ -259,10 +254,10 @@ build_vision_project() {
 	fi
 
 	# -DSTRATA_PORTABLE=ON keeps the reader on an AVX2 baseline, like the engine, instead of the build
-	# host's instruction set.
-	cmake -S "${S}/tools/vision" -B "${build}" -G Ninja \
+	# host's instruction set. No LLAMA_DIR is passed: since 0.2.16 the reader is Strata's own vision tower
+	# (tools/vision/own) and the option only reaches the llama.cpp-backed test oracles.
+	cmake -S "${TERMINAL_S}/tools/vision" -B "${build}" -G Ninja \
 		-DCMAKE_BUILD_TYPE=Release \
-		-DLLAMA_DIR="${LLAMA_S}" \
 		-DSTRATA_PORTABLE=ON \
 		"$@" || die "configuring strata-vision (${build##*/}) failed"
 
@@ -283,11 +278,7 @@ compile_vision() {
 			-DCMAKE_HIP_COMPILER="$(hipconfig -l)/clang++"
 		)
 	elif use cuda; then
-		archargs=(
-			-DSTRATA_VISION_CUDA=ON
-			# ggml-cuda wants NCCL for multi-GPU collectives, which a single-card reader never uses
-			-DGGML_CUDA_NCCL=OFF
-		)
+		archargs=( -DSTRATA_VISION_CUDA=ON )
 		# The reader is built for the same architectures as the engine: a reader without code for the
 		# card dies where the engine runs (#3669), and package_engine.py refuses such a package.
 		archargs+=( -DCMAKE_CUDA_ARCHITECTURES="$(cuda_architectures)" )
@@ -308,11 +299,9 @@ compile_vision() {
 
 src_compile() {
 	# The default target also carries the parity and benchmark programs the terminal never starts.
-	if use hip; then
-		cmake_build strata strata-device
-	else
-		cmake_build strata
-	fi
+	# Up to 0.2.15 the HIP backend split its engine into strata plus strata-device; 0.2.16 links it into
+	# one strata binary for both backends, so a second target would no longer exist.
+	cmake_build strata
 
 	use vision && compile_vision
 }
@@ -330,11 +319,8 @@ package_engine() {
 
 	mkdir -p "${stage}" || die
 	cp "${BUILD_DIR}/strata" "${stage}/" || die
-	if use hip; then
-		cp "${BUILD_DIR}/strata-device" "${stage}/" || die
-	fi
 
-	# The readers, and the architectures they were built for: package_engine.py refuses a CUDA package
+	# The reader, if any, and the architectures it was built for: package_engine.py refuses a CUDA package
 	# whose reader does not cover the engine's architectures, so BUILD.json records vision_archs.
 	local vision_json=""
 	if use vision; then
@@ -407,16 +393,16 @@ package_engine() {
 		local ver_num=$(( ver[0] * 100000 + ver[1] * 100 + ver[2] ))
 		einfo "hipBLASLt ${ver[0]}.${ver[1]}.${ver[2]} (${ver_num})"
 
-		python3 -I packaging/stage_tuning.py \
+		python3 -I "${TERMINAL_S}/tools/packaging/stage_tuning.py" \
 			--stage "${stage}" \
 			--archs "${arches[*]}" \
 			--version "${ver_num}" \
-			--tables "${S}/tools/hip" || die
+			--tables "${TERMINAL_S}/tools/hip" || die
 	fi
 
 	# A package without the reader answers text only; package_engine.py says so itself when --src has no
 	# strata-vision, so --no-picture-reader is not needed either way.
-	python3 -I packaging/package_engine.py \
+	python3 -I "${TERMINAL_S}/tools/packaging/package_engine.py" \
 		--src "${stage}" \
 		--backend "${backend}" \
 		--version "$(engine_version)" \
@@ -427,10 +413,13 @@ package_engine() {
 }
 
 install_terminal() {
-	# The terminal is the layout packaging/package_terminal.py builds, minus the private interpreter:
-	# the installed Python runs it. Everything it resolves is relative to the folder holding strata.py.
+	# The terminal is the layout tools/packaging/package_terminal.py builds, minus the private
+	# interpreter: the installed Python runs it. Everything it resolves is relative to the folder holding
+	# strata.py, so the source tree upstream calls terminal/ is installed as the root.
 	local root="/usr/share/${PN}"
 	local mod
+
+	pushd "${TERMINAL_S}" >/dev/null || die
 
 	insinto "${root}"
 	doins strata.py requirements.txt requirements-monitor.txt
@@ -474,6 +463,8 @@ install_terminal() {
 	# modules themselves are byte-compiled below.
 	exeinto /usr/bin
 	newexe "${FILESDIR}/${PN}-launcher.sh" ${PN}
+
+	popd >/dev/null || die
 	python_optimize "${ED}${root}"
 
 	# The terminal resolves its modules, its web assets and tools/ from the folder holding strata.py.
