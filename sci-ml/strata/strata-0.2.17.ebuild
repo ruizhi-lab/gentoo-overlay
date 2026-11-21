@@ -165,7 +165,7 @@ engine_platform() {
 
 engine_version() {
 	local ver
-	# Upstream's project() line is `project(strata VERSION 0.1.62 LANGUAGES CXX)` in engine/CMakeLists.txt:
+	# Upstream's project() line is `project(strata VERSION 0.1.63 LANGUAGES CXX)` in engine/CMakeLists.txt:
 	# the engine build number, not PV. A second project() line does not exist, but take the first anyway.
 	ver=$(sed -n 's/^[[:space:]]*project([^)]*VERSION[[:space:]]*\([0-9][0-9.]*\).*/\1/p' \
 		"${ENGINE_S}/CMakeLists.txt" | head -n 1)

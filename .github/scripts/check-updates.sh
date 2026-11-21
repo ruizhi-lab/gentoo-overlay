@@ -13,7 +13,6 @@
 #   type=scooter:   source is unused; scrapes scootersoftware.com kb/linux_install
 #   type=aur:       source is AUR package name (e.g. "wps-office-cn")
 #   type=openai-deb: source is the OpenAI Debian Packages index
-#   type=claude-deb: source is the Claude Desktop Debian Packages index
 #   type=comfy-pin: source is a project name pinned with "==" in the
 #                   requirements.txt of the latest ComfyUI release
 #   type=comfy-pin-sub: source is a PyPI project name pinned with "==" by the
@@ -72,7 +71,6 @@ PKGS=(
   "sci-misc/prism-llama-cpp|PrismML-Eng/llama.cpp||github-prism-build"
   "app-office/wps-office|wps-office-cn||aur"
   "app-misc/chatgpt-desktop|https://persistent.oaistatic.com/codex-app-prod/linux/deb/dists/stable/main/binary-amd64/Packages||openai-deb"
-  "app-misc/claude-desktop|https://downloads.claude.ai/claude-desktop/apt/stable/dists/stable/main/binary-amd64/Packages||claude-deb"
 )
 
 GH_API="${GITHUB_API_URL:-https://api.github.com}"
@@ -337,13 +335,6 @@ get_openai_deb_latest() {
     | awk '/^Package: chatgpt$/{found=1; next} found && /^Package:/{found=0} found && /^Version:/ && !done {print $2; done=1}'
 }
 
-# Claude's Packages index retains older releases, so select the highest version.
-get_claude_deb_latest() {
-  curl "${CURL_ARGS[@]}" "$1" \
-    | awk '/^Package: claude-desktop$/{found=1; next} found && /^Version:/{print $2; found=0}' \
-    | sort -V | tail -1
-}
-
 # Pins that ComfyUI's latest release sets for its asset packages. They are loaded
 # once, so every comfy-pin entry compares against the same release. A failure is
 # recorded in the *_PIN_ERROR variables and reported for each dependent entry.
@@ -391,7 +382,6 @@ lookup_latest() {
     aur)               get_aur_latest "$repo" ;;
     gentoozh)          get_gentoozh_latest "$repo" ;;
     openai-deb)        get_openai_deb_latest "$repo" ;;
-    claude-deb)        get_claude_deb_latest "$repo" ;;
     comfy-pin)         printf '%s\n' "${COMFY_PINS[$repo]:-}" ;;
     comfy-pin-sub)     printf '%s\n' "${SUB_PINS[$repo]:-}" ;;
     github-goldendict) get_goldendict_latest "$repo" ;;
@@ -524,7 +514,7 @@ for entry in "${PKGS[@]}"; do
     gentoozh)
       echo "UPDATE: ${pkg}: ${current} -> ${latest}  (https://github.com/gentoo-zh/overlay/tree/master/${repo})"
       ;;
-    openai-deb|claude-deb)
+    openai-deb)
       echo "UPDATE: ${pkg}: ${current} -> ${latest}  (${repo})"
       ;;
     comfy-pin)
