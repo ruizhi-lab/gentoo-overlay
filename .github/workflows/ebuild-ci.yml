@@ -50,9 +50,15 @@ jobs:
           # git is no longer shipped in stage3 images (removed upstream
           # 2026-08); required by the guru clone and changed-ebuild detection
           command -v git >/dev/null 2>&1 || emerge -1 --quiet dev-vcs/git
+          # patchelf rewrites the ELF headers of prebuilt packages, which
+          # app-office/wps-office and (until -r1) net-im/wechat call from
+          # src_prepare. `ebuild` does not install BDEPENDs and the image does not
+          # ship patchelf, so a missing one failed the ebuild with "patchelf:
+          # command not found" rather than being reported by the tool check below.
+          command -v patchelf >/dev/null 2>&1 || emerge -1 --quiet dev-util/patchelf 2>&1 || true
           echo ""
           echo "=== Tool check ==="
-          for tool in unzip tar gzip xz ar git; do
+          for tool in unzip tar gzip xz ar git patchelf; do
             command -v $tool >/dev/null 2>&1 && echo "$tool: OK" || echo "$tool: MISSING"
           done
 

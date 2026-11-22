@@ -19,12 +19,8 @@ IUSE="bwrap +fcitx ibus"
 REQUIRED_USE="^^ ( fcitx ibus )"
 
 RESTRICT="strip mirror bindist"
-BDEPEND="
-	dev-util/patchelf
-"
 RDEPEND="
 	app-accessibility/at-spi2-core
-	app-arch/bzip2
 	virtual/krb5
 	dev-libs/nss
 	media-libs/libpulse
@@ -50,27 +46,15 @@ QA_PREBUILT="*"
 src_prepare() {
 	default
 
-	# add any QA scanelf alert files here.
-	local so_files=(
-		"RadiumWMPF/runtime/libilink2.so"
-		"RadiumWMPF/runtime/libilink_network.so"
-		"libilink2.so"
-		"libilink_network.so"
-		"libconfService.so"
-		"libvoipChannel.so"
-		"libvoipCodec.so"
-	)
-
-	for file in "${so_files[@]}"; do
-		if [[ -f "opt/wechat/${file}" ]]; then
-			patchelf --set-rpath '$ORIGIN' "opt/wechat/${file}" || die
-		fi
-	done
-
-	if [[ -f opt/wechat/libwxtrans.so ]]; then
-		patchelf --replace-needed libbz2.so.1.0 libbz2.so.1 \
-			opt/wechat/libwxtrans.so || die
-	fi
+	# No ELF in the deb needs patching, so nothing here rewrites it. Every library that
+	# loads a file from its own directory (libilink2, libilink_wrapper, libconfService,
+	# libvoipChannel, libvoipCodec, libwxtrans) already carries $ORIGIN or ${ORIGIN}, and
+	# no shipped file imports libbz2 any more. The earlier revisions rewrote those same
+	# RPATHs and libwxtrans.so's libbz2.so.1.0 import with dev-util/patchelf; that never
+	# fired in CI, whose image has no patchelf and where `ebuild` does not install
+	# BDEPEND, so src_prepare died with "patchelf: command not found". The calls and the
+	# build dependency they needed are gone, together with app-arch/bzip2, which only
+	# existed for the bz2 rewrite.
 }
 
 src_install() {
