@@ -83,7 +83,7 @@ launch` fetches what you choose into your own data folder; the upstream model
 notes are in the engine's docs directory and at
 https://github.com/Niko1221/Strata.
 
-Strata runs one model family, not arbitrary GGUF files. Its catalogue in
+Strata runs one model family itself, not arbitrary GGUF files. Its catalogue in
 terminal/data/gguf_fingerprints.json has 23 selections under the qwen, swift,
 coder, unsloth and gyro keys, and every one of them is Qwen3.8-Flash-Next
 (qwen4exp), in a GSQ-RCO, Q2_0, UD or Gyro-TQ quantization, split into two
@@ -93,8 +93,15 @@ Qwen3.8 size such as Qwen3.8-27B (qwen35), is refused by `strata models import`:
     this model type is not supported by the Strata engine (add it as a
     Custom model API with llama-server instead)
 
-For those, a llama.cpp package is the tool - sci-misc/llama-cpp from guru, or
-sci-misc/prism-llama-cpp from this overlay: the engine here is the
+Since 0.2.18 the catalogue also lists Tencent Hy4-Flash (32 GB or more of RAM;
+its files are .strata rather than GGUF). Upstream ships that model's engine as a
+separate program, the component strata-hy4, which this package does not build:
+only the Qwen3.8-Flash-Next engine is installed here, so a Hy4-Flash launch
+reports that its engine is not installed, and `strata update` refuses to fetch
+it because Portage owns the component folder.
+
+For other models, a llama.cpp package is the tool - sci-misc/llama-cpp from
+guru, or sci-misc/prism-llama-cpp from this overlay: the engine here is the
 Flash-Next one and its kernels are written for it. An MTP
 drafter file (the -mtp.gguf beside a model) and an mmproj are parts of a
 supported selection, not models of their own, and importing either on its own

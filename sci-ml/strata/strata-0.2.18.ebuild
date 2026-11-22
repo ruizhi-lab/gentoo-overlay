@@ -181,6 +181,9 @@ src_configure() {
 	)
 	# 0.2.16 keeps ggml in engine/third_party/strata-ggml and gives the reader no llama.cpp at all, so
 	# -DSTRATA_GGML_DIR is left unset: it is the override for a llama.cpp checkout, not a requirement.
+	# 0.2.18 adds the Hy4-Flash sources under engine/src/hy4flash, but they are built by hand-written scripts of their
+	# own (build_hy4_sycl.sh and friends), not by engine/CMakeLists.txt: upstream ships that model's engine as the
+	# separate component strata-hy4, so the strata target here stays the Flash-Next one and builds offline as before.
 
 	if use hip; then
 		# cmake/hip_backend.cmake refuses every architecture it does not know, so the list comes from
@@ -445,9 +448,11 @@ install_terminal() {
 	doins ref/load.py
 
 	insinto "${root}/data"
-	doins data/gguf_fingerprints.json data/draft_vocab.bin data/draft_vocab_cyrillic.bin \
-		data/draft_vocab_en.bin data/draft_vocab_fr.bin data/draft_vocab_latin.bin \
-		data/expert-profile.bin data/expert-profile-coder.bin
+	# hy4-sources.json (0.2.18) carries the Hy4-Flash download base that strata_control/hy4_family.py reads: without it
+	# the family offers only model files that are already on disk.
+	doins data/gguf_fingerprints.json data/hy4-sources.json data/draft_vocab.bin \
+		data/draft_vocab_cyrillic.bin data/draft_vocab_en.bin data/draft_vocab_fr.bin \
+		data/draft_vocab_latin.bin data/expert-profile.bin data/expert-profile-coder.bin
 
 	# drafting_fetch.provide_licence() copies this Apache-2.0 text and the "modified by Strata"
 	# notice beside the tuned drafter it fetches, resolving it from the install root. Upstream's
@@ -505,6 +510,12 @@ pkg_postinst() {
 	elog "Q2_0 and UD quantizations, and 'strata models import' refuses any other GGUF"
 	elog "file, naming llama-server instead. Use sci-misc/prism-llama-cpp for models of"
 	elog "another family or size."
+	if use terminal; then
+		elog
+		elog "The model list also shows Tencent Hy4-Flash, which needs its own engine program"
+		elog "(upstream's separate component strata-hy4). This package does not build it, so"
+		elog "starting a Hy4-Flash model reports that its engine is not installed."
+	fi
 	elog
 	elog "The engine is a system component under /usr/lib/${PN}/components,"
 	elog "upgraded with Portage. 'strata install' and 'strata update' refuse to run and name"

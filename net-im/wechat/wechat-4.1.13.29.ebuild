@@ -77,12 +77,18 @@ src_install() {
 	insinto /opt/wechat
 	doins -r opt/wechat/* || die
 
-	# doins doesn't set +x on executables
+	# doins doesn't set +x on executables. WeChatAppEx_sandbox is new in 4.1.13.29:
+	# it is Chromium's setuid sandbox helper, shipped upstream as mode 4755. doexe installs it
+	# 0755, without the setuid bit, so it can never switch to another user's credentials; it
+	# starts the renderer as root only in the tree upstream builds, where no Gentoo user is.
+	# Dropping the bit rather than the file keeps the program beside WeChatAppEx, which names
+	# it in its own messages.
 	exeinto /opt/wechat
 	doexe opt/wechat/wechat opt/wechat/wxutility opt/wechat/wxplayer \
 		opt/wechat/wxocr opt/wechat/crashpad_handler
 	exeinto /opt/wechat/RadiumWMPF/runtime
 	doexe opt/wechat/RadiumWMPF/runtime/WeChatAppEx \
+		opt/wechat/RadiumWMPF/runtime/WeChatAppEx_sandbox \
 		opt/wechat/RadiumWMPF/runtime/crashpad_handler
 
 	if use bwrap; then

@@ -161,6 +161,14 @@ explicitly requires otherwise.
   Strata engine". DeepSeek-V4.1 needs `STRATA_BUILD_DSV41=ON`, which this
   package does not build, so it is not available here either. Users with other
   models want `sci-misc/prism-llama-cpp` or `sci-misc/llama-cpp` from guru.
+- 0.2.18 adds Tencent Hy4-Flash (`hy4-flash`, `.strata` files, listed through
+  `terminal/data/hy4-sources.json`, which the ebuild must install). It has an
+  engine of its own, the component `strata-hy4` (shape `hy4`), which no ebuild
+  here builds: `engine/src/hy4flash` is compiled by hand-written upstream
+  scripts, not by `engine/CMakeLists.txt`. The terminal therefore offers the
+  model but cannot start it; keep that distinction in the ebuild comments,
+  `metadata.xml` and `files/README.gentoo` instead of claiming the package runs
+  one family unconditionally.
 - Version bumps follow upstream tags, not the release list. Upstream ships
   patch releases as tags only: `v0.2.7.1` is 127 commits newer than `v0.2.7`
   and is newer than the `v0.2.7` GitHub release, whose notes fold the 0.2.7.1
