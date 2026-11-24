@@ -40,7 +40,7 @@ PKGS=(
   "net-misc/xrdp|neutrinolabs/xrdp|v|github"
   "net-proxy/v2rayn-bin|2dust/v2rayN||github"
   "net-misc/xorgxrdp|neutrinolabs/xorgxrdp|v|github"
-  "dev-python/kornia-rs|kornia/kornia-rs|v|github"
+  "sci-ml/kornia-rs|kornia/kornia-rs|v|github"
   "media-gfx/comfyui|Comfy-Org/ComfyUI|v|github"
   # ComfyUI's asset packages follow the exact pins in its requirements.txt, so
   # they are compared with those pins rather than with the newest upstream release.
@@ -70,7 +70,7 @@ PKGS=(
   "net-misc/baidunetdisk|net-misc/baidunetdisk||gentoozh"
   "dev-util/datagrip|DG||jetbrains"
   "dev-util/kimi-code-desktop-bin|MoonshotAI/kimi-code||github-kimi-desktop"
-  "app-misc/bcompare|bcompare||scooter"
+  "dev-util/bcompare|bcompare||scooter"
   "sci-misc/prism-llama-cpp|PrismML-Eng/llama.cpp||github-prism-build"
   "app-office/wps-office|wps-office-cn||aur"
   "app-misc/chatgpt-desktop|https://persistent.oaistatic.com/codex-app-prod/linux/deb/dists/stable/main/binary-amd64/Packages||openai-deb"

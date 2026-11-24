@@ -8,6 +8,7 @@ on:
       - '**/files/**'
       - '**/Manifest'
       - '**/metadata.xml'
+      - '.github/workflows/ebuild-ci.yml'
   pull_request:
     branches: [main]
     paths:
@@ -15,6 +16,7 @@ on:
       - '**/files/**'
       - '**/Manifest'
       - '**/metadata.xml'
+      - '.github/workflows/ebuild-ci.yml'
   workflow_dispatch:
 
 jobs:
@@ -138,6 +140,20 @@ jobs:
             BASE="${{ github.event.before }}"
             if [ -z "${BASE}" ] || [ "${BASE}" = "0000000000000000000000000000000000000000" ]; then
               BASE="HEAD~1"
+            fi
+          fi
+
+          # A force push can leave event.before pointing at a commit that is
+          # no longer in the branch history. Compare from the first incoming
+          # commit's parent instead, so all commits in the push are checked.
+          if ! git cat-file -e "${BASE}^{commit}" 2>/dev/null; then
+            if [ "${{ github.event_name }}" = "push" ] &&
+              [ "${{ github.event.forced }}" = "true" ]; then
+              FIRST_COMMIT="${{ github.event.commits[0].id }}"
+              if [ -n "${FIRST_COMMIT}" ] &&
+                git cat-file -e "${FIRST_COMMIT}^{commit}" 2>/dev/null; then
+                BASE=$(git rev-parse "${FIRST_COMMIT}^") || { echo "::error::cannot resolve the first incoming commit's parent"; exit 1; }
+              fi
             fi
           fi
 

@@ -1,0 +1,2 @@
+move app-misc/bcompare dev-util/bcompare
+move dev-python/kornia-rs sci-ml/kornia-rs
