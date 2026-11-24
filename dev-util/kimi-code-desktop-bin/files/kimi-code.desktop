@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Kimi Code
+Comment=Desktop GUI for the Kimi Code agent
+Exec=kimi-code-desktop %U
+Terminal=false
+Type=Application
+Icon=kimi-code
+StartupWMClass=kimi-code
+MimeType=x-scheme-handler/kimi-code;
+Categories=Development;

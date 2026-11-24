@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<name>Ruizhi Zhong</name>
+		<email>ruizhi.zhong88@gmail.com</email>
+	</maintainer>
+	<longdescription>
+		Kimi Code Desktop is the graphical client of the Kimi Code agent from
+		Moonshot AI. It runs the agent in a window with plans, sessions, a
+		built-in terminal and editor integrations, and signs in to the Kimi
+		Code service or a user-supplied model provider.
+	</longdescription>
+	<use>
+		<flag name="wayland">Let the Electron window use the native Wayland backend when the session is Wayland.</flag>
+	</use>
+	<upstream>
+		<doc>https://www.kimi.com/code/docs/kimi-code-desktop/getting-started.html</doc>
+		<bugs-to>https://github.com/MoonshotAI/kimi-code/issues</bugs-to>
+		<remote-id type="github">MoonshotAI/kimi-code</remote-id>
+	</upstream>
+</pkgmetadata>

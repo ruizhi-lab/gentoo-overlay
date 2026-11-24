@@ -9,6 +9,8 @@
 #   type=github-kwin-glass: KWin Glass tag YYYYMMDD-6.8.0-support maps to
 #                           Gentoo YYYYMMDD.6.8.0
 #   type=github-prism-build: Prism tag prism-bN-<commit> maps to Gentoo N
+#   type=github-kimi-desktop: Kimi tag kimi-code-desktop@X.Y.Z maps to
+#                             Gentoo X.Y.Z; CLI and canary tags are ignored
 #   type=jetbrains: source is JetBrains product code (e.g. "DG")
 #   type=scooter:   source is unused; scrapes scootersoftware.com kb/linux_install
 #   type=aur:       source is AUR package name (e.g. "wps-office-cn")
@@ -67,6 +69,7 @@ PKGS=(
   "net-im/wechat|net-im/wechat||gentoozh"
   "net-misc/baidunetdisk|net-misc/baidunetdisk||gentoozh"
   "dev-util/datagrip|DG||jetbrains"
+  "dev-util/kimi-code-desktop-bin|MoonshotAI/kimi-code||github-kimi-desktop"
   "app-misc/bcompare|bcompare||scooter"
   "sci-misc/prism-llama-cpp|PrismML-Eng/llama.cpp||github-prism-build"
   "app-office/wps-office|wps-office-cn||aur"
@@ -219,6 +222,33 @@ for release in releases:
     if match:
         print(match.group(1))
         break
+' 2>/dev/null
+}
+
+# Get the latest Kimi Code Desktop version from GitHub.
+# MoonshotAI/kimi-code publishes the desktop builds, the CLI packages and
+# hourly canary snapshots as releases side by side, so only tags shaped like
+# kimi-code-desktop@X.Y.Z are considered. The desktop releases are not
+# necessarily the newest ones, so they are not taken from the head of the list.
+get_kimi_desktop_latest() {
+  local repo="$1"
+  curl "${CURL_ARGS[@]}" "${GH_API}/repos/${repo}/releases?per_page=100" \
+    | python3 -c '
+import json,re,sys
+releases = json.load(sys.stdin)
+if not isinstance(releases, list):
+    sys.exit(1)
+tag = re.compile(r"kimi-code-desktop@(\d+(?:\.\d+)*)$")
+versions = []
+for release in releases:
+    if release.get("prerelease") or release.get("draft"):
+        continue
+    match = tag.fullmatch(release.get("tag_name", ""))
+    if match:
+        versions.append(match.group(1))
+if versions:
+    versions.sort(key=lambda v: tuple(int(p) for p in v.split(".")))
+    print(versions[-1])
 ' 2>/dev/null
 }
 
@@ -398,6 +428,8 @@ lookup_latest() {
       # The current PV is YYYYMMDD but the release tag is YYYY-MM-DD; avoid
       # the helper's generic current-version fallback comparison here.
       get_latest_stable "$repo" ;;
+    github-kimi-desktop)
+      get_kimi_desktop_latest "$repo" ;;
     *)
       get_latest_stable "$repo" "$current" ;;
   esac
