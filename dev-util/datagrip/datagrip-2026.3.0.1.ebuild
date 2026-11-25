@@ -73,6 +73,12 @@ src_install() {
 	fperms 755 "${dir}"/jbr/lib/{jexec,jspawnhelper}
 	fperms 755 "${dir}"/jbr/bin/jwebserver
 	fperms 755 "${dir}"/plugins/remote-dev-server/bin/launcher.sh
+	fperms 755 "${dir}"/plugins/air-plugin/air-session/linux-x86_64/air-session
+
+	# The Air plugin verifies these two files with the SHA-256 prefixes stored
+	# in the .digest files next to them when it copies them to the user's
+	# system directory, so stripping them would break the copy.
+	dostrip -x "${dir}"/plugins/air-plugin/air-session/linux-x86_64/{air-session,libair_ide.so}
 	# JetBrains moved this binary from plugins/platform-ijent-bundledBinaries/
 	# to lib/ijent/ in 2026.3; the aarch64 copy is removed in src_prepare().
 	fperms 755 "${dir}"/lib/ijent/ijent-x86_64-unknown-linux-musl-release
