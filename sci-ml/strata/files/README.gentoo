@@ -83,12 +83,15 @@ launch` fetches what you choose into your own data folder; the upstream model
 notes are in the engine's docs directory and at
 https://github.com/Niko1221/Strata.
 
-Strata runs one model family itself, not arbitrary GGUF files. Its catalogue in
-terminal/data/gguf_fingerprints.json has 23 selections under the qwen, swift,
-coder, unsloth and gyro keys, and every one of them is Qwen3.8-Flash-Next
-(qwen4exp), in a GSQ-RCO, Q2_0, UD or Gyro-TQ quantization, split into two
-shards with the exact upstream file names. Another model, including a different
-Qwen3.8 size such as Qwen3.8-27B (qwen35), is refused by `strata models import`:
+Strata's own engine runs two model families, not arbitrary GGUF files. Its
+Flash-Next catalogue in terminal/data/gguf_fingerprints.json has 23 selections
+under the qwen, swift, coder, unsloth and gyro keys, and every one of them is
+Qwen3.8-Flash-Next (qwen4exp), in a GSQ-RCO, Q2_0, UD or Gyro-TQ quantization,
+split into two shards with the exact upstream file names. Qwen3.6-35B-A3B
+(qwen35moe) is configured separately through OWN_PATH_FAMILIES in
+terminal/setup.py, with Unsloth's UD-Q4_K_XL, UD-Q6_K_XL and Q8_0 GGUFs.
+Another model, including a different Qwen3.8 size such as Qwen3.8-27B
+(qwen35), is refused by `strata models import`:
 
     this model type is not supported by the Strata engine (add it as a
     Custom model API with llama-server instead)
@@ -106,8 +109,8 @@ component strata-inkling, which this package also does not build, so an
 Inkling-2-Mini launch reports that its engine is not installed in the same way.
 
 For other models, a llama.cpp package is the tool - sci-misc/llama-cpp from
-guru, or sci-misc/prism-llama-cpp from this overlay: the engine here is the
-Flash-Next one and its kernels are written for it. An MTP
+guru, or sci-misc/prism-llama-cpp from this overlay: Strata's own kernels are
+written for the two families above. An MTP
 drafter file (the -mtp.gguf beside a model) and an mmproj are parts of a
 supported selection, not models of their own, and importing either on its own
 is refused too.

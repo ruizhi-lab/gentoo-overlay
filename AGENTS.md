@@ -152,15 +152,21 @@ explicitly requires otherwise.
   terminal and API server, so it belongs in `sci-ml` (machine learning and NLP)
   rather than `sci-misc`, which is the fallback for packages that fit no other
   `sci-*` category. `sci-ml/ollama` and `sci-ml/ggml` are the neighbours.
-- Strata runs one model family. `terminal/data/gguf_fingerprints.json` holds 23
-  selections under the qwen, swift, coder, unsloth and gyro keys and every one
-  is Qwen3.8-Flash-Next (`qwen4exp`), split into two shards with exact upstream
-  file names. Do not describe the package as running arbitrary GGUF models:
-  `strata models import` refuses anything else, including another Qwen3.8 size
-  such as the 27B (`qwen35`), with "this model type is not supported by the
-  Strata engine". DeepSeek-V4.1 needs `STRATA_BUILD_DSV41=ON`, which this
-  package does not build, so it is not available here either. Users with other
-  models want `sci-misc/prism-llama-cpp` or `sci-misc/llama-cpp` from guru.
+- Strata's own engine runs two model families.
+  `terminal/data/gguf_fingerprints.json` holds 23 selections under the qwen,
+  swift, coder, unsloth and gyro keys and every one is Qwen3.8-Flash-Next
+  (`qwen4exp`), split into two shards with exact upstream file names.
+  Qwen3.6-35B-A3B (`qwen35moe`) is configured separately through
+  `OWN_PATH_FAMILIES` in `terminal/setup.py`, with Unsloth's UD-Q4_K_XL,
+  UD-Q6_K_XL and Q8_0 GGUFs. The `strata` binary selects its Qwen3.6 engine
+  path from the file's architecture, so the separate `strata-q36` wrapper is
+  not needed in the component package. Do not describe the package as running
+  arbitrary GGUF models: `strata models import` refuses unsupported files,
+  including another Qwen3.8 size such as the 27B (`qwen35`), with "this model
+  type is not supported by the Strata engine". DeepSeek-V4.1 needs
+  `STRATA_BUILD_DSV41=ON`, which this package does not build, so it is not
+  available here either. Users with other models want
+  `sci-misc/prism-llama-cpp` or `sci-misc/llama-cpp` from guru.
 - 0.2.18 adds Tencent Hy4-Flash (`hy4-flash`, `.strata` files, listed through
   `terminal/data/hy4-sources.json`, which the ebuild must install). It has an
   engine of its own, the component `strata-hy4` (shape `hy4`), which no ebuild
@@ -168,7 +174,7 @@ explicitly requires otherwise.
   scripts, not by `engine/CMakeLists.txt`. The terminal therefore offers the
   model but cannot start it; keep that distinction in the ebuild comments,
   `metadata.xml` and `files/README.gentoo` instead of claiming the package runs
-  one family unconditionally.
+  the two supported Qwen families unconditionally.
 - Version bumps follow upstream tags, not the release list. Upstream ships
   patch releases as tags only: `v0.2.7.1` is 127 commits newer than `v0.2.7`
   and is newer than the `v0.2.7` GitHub release, whose notes fold the 0.2.7.1

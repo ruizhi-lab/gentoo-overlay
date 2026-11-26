@@ -6,14 +6,15 @@
 		<email>ruizhi.zhong88@gmail.com</email>
 	</maintainer>
 	<longdescription>
-		Strata is an inference engine for Qwen3.8-Flash-Next (and, in the terminal's
-		catalogue, Tencent Hy4-Flash and Thinking Machines Inkling-2-Mini) on
-		consumer NVIDIA and AMD hardware, with an OpenAI/Anthropic-compatible API
-		served on localhost and a terminal client that picks, verifies and starts the
-		engine.
-		The engine built here runs Qwen3.8-Flash-Next: its catalogue lists that model
-		in several GSQ-RCO, Q2_0 and UD quantizations, and the terminal refuses other
-		GGUF files, including other Qwen3.8 sizes. The catalogue also lists
+		Strata is an inference engine for Qwen3.8-Flash-Next and Qwen3.6-35B-A3B
+		(and, in the terminal's catalogue, Tencent Hy4-Flash and Thinking Machines
+		Inkling-2-Mini) on consumer NVIDIA and AMD hardware, with an
+		OpenAI/Anthropic-compatible API served on localhost and a terminal client
+		that picks, verifies and starts the engine.
+		The engine built here runs Qwen3.8-Flash-Next in several GSQ-RCO, Q2_0 and
+		UD quantizations, and Qwen3.6-35B-A3B in Unsloth's UD-Q4_K_XL, UD-Q6_K_XL
+		and Q8_0 GGUFs. The terminal refuses unsupported GGUF files, including other
+		Qwen3.8 sizes. The catalogue also lists
 		Tencent Hy4-Flash and Thinking Machines Inkling-2-Mini, whose model files
 		the terminal can prepare, but each engine is a separate upstream component
 		(strata-hy4 and strata-inkling) that this package does not build.

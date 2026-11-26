@@ -19,7 +19,7 @@ inherit cmake cuda multiprocessing python-single-r1 rocm toolchain-funcs
 # (3cf03257f219afbe7334045ff7c6a06ac68c627d) as engine/third_party/strata-ggml, and the picture reader
 # became Strata's own tower with no llama.cpp or ggml inside, so the tarball builds offline on its own.
 
-DESCRIPTION="Inference engine and terminal for Qwen3.8-Flash-Next"
+DESCRIPTION="Inference engine and terminal for Qwen3.8-Flash-Next and Qwen3.6-35B-A3B"
 HOMEPAGE="https://github.com/Niko1221/Strata"
 SRC_URI="https://github.com/Niko1221/Strata/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz"
 S="${WORKDIR}/Strata-${PV}"
@@ -184,7 +184,8 @@ src_configure() {
 	# 0.2.20 adds the Inkling-2-Mini shape engine under engine/src/inkling2 and a strata-inkling target that is ON
 	# by default, plus an opt-in strata-hy4 target (STRATA_BUILD_HY4, OFF). Both are the programs of upstream's
 	# separate shape components (strata-inkling and strata-hy4), not the Strata engine: src_compile builds only the
-	# strata target, so neither is installed and the engine here stays the Flash-Next one.
+	# strata target, so neither is installed. That binary runs both Flash-Next and Qwen3.6, selecting the latter's
+	# engine path from the GGUF architecture, so the separate strata-q36 wrapper is not needed in the component.
 
 	if use hip; then
 		# cmake/hip_backend.cmake refuses every architecture it does not know, so the list comes from
@@ -510,10 +511,10 @@ pkg_postinst() {
 	elog "OpenAI/Anthropic-compatible API on localhost. Models and run configs live in the"
 	elog "calling user's ~/.local/share/strata."
 	elog
-	elog "The engine runs Qwen3.8-Flash-Next only: 'strata launch' offers its GSQ-RCO,"
-	elog "Q2_0 and UD quantizations, and 'strata models import' refuses any other GGUF"
-	elog "file, naming llama-server instead. Use sci-misc/prism-llama-cpp for models of"
-	elog "another family or size."
+	elog "The engine runs Qwen3.8-Flash-Next and Qwen3.6-35B-A3B. 'strata launch'"
+	elog "offers their supported quantizations, and 'strata models import' refuses"
+	elog "unsupported GGUF files, naming llama-server instead. Use"
+	elog "sci-misc/prism-llama-cpp for models of another family or size."
 	if use terminal; then
 		elog
 		elog "The model list also shows Tencent Hy4-Flash and Thinking Machines Inkling-2-Mini,"
